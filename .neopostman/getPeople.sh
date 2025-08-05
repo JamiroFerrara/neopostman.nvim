@@ -1,0 +1,4 @@
+echo 'enzo
+stefi
+mario
+'

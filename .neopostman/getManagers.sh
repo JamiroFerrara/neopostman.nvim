@@ -1,0 +1,4 @@
+echo 'Jamiro
+Andrea
+Luca
+'
