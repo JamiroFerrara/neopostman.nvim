@@ -26,6 +26,8 @@ function M.Layout:init()
   self.split1 = Split(default_split_config)
   self.split2 = Split(default_split_config)
 
+  vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
+
   self:init_mappings()
   self:init_events()
 end
@@ -47,12 +49,21 @@ function M.Layout:init_mappings()
   self.split1:map("n", "r", function() self:rerun() end, {})
   self.split1:map("n", "q", function() self:toggle() end, {})
   self.split1:map("n", "<leader>q", function() self:toggle() end, {})
+  self.split1:map("n", "e", function() self:edit() end, {})
 
   ---Split 2
   self.split2:map("n", "r", function() self:rerun() end, {})
   self.split2:map("n", "<cr>", function() self:rerun() end, {})
   self.split2:map("n", "q", function() self:toggle() end, {})
   self.split2:map("n", "<leader>q", function() self:toggle() end, {})
+end
+
+function M.Layout:edit()
+  local line = self:get_line()
+  local file_path = ".neopostman/" .. line
+
+  ---TODO: Make this a controlled buffer so i can add commands
+  vim.cmd("edit " .. file_path)
 end
 
 function M.Layout:rerun()
