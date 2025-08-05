@@ -71,7 +71,8 @@ function M.Layout:run_current()
 end
 
 function M.Layout:run_script(line)
-  self:show_loading()
+  -- self:show_loading("Loading.." .. self.last_command .. "..")
+  self:show_loading("Loading..")
 
   Job:new({
     command = "chmod",
@@ -122,11 +123,12 @@ function M.Layout:get_scripts()
   U.put_text(self.split1.bufnr, res)
 end
 
+--TODO: Make the loader stand alone
 M.Layout.spinner_index = 1
 M.Layout.spinner_timer = nil
 local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
 
-function M.Layout:show_loading()
+function M.Layout:show_loading(message)
   if self.loading_popup then
     return
   end
@@ -168,7 +170,7 @@ function M.Layout:show_loading()
       end
 
       local frame = spinner_frames[self.spinner_index]
-      local line = center_line(frame .. " loading...")
+      local line = center_line(frame .. " " .. message)
 
       vim.api.nvim_buf_set_lines(self.loading_popup.bufnr, 0, -1, false, { "", line, "" })
 
