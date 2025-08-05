@@ -1,0 +1,17 @@
+# .editorconfig
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.lua]
+# Use 120 or more to allow long single-line closures
+max_line_length = 120
+
+# Ensure one-liners aren't split
+keep_single_line_statements = true
