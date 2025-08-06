@@ -64,6 +64,7 @@ function M.Layout:init_events()
 
   self.split1:on("CursorMoved", function() --Highlight current line only in split1
     U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
+    self:print(self:get_line())
   end)
 
   self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
