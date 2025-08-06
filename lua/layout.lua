@@ -1,10 +1,10 @@
 local M = {}
 
 local Split = require("nui.split")
-local Popup = require("nui.popup")
 local Object = require("nui.object")
 local Job = require("plenary.job")
 local U = require("./utils")
+local S = require("./spinner")
 
 ---@class JLayout
 ---@field open boolean
@@ -29,7 +29,7 @@ function M.Layout:init()
   self:init_events()
 end
 
-function M.Layout:init_highlights(args)
+function M.Layout:init_highlights()
   self._active_ns = vim.api.nvim_create_namespace("neopostman_hl")
   vim.cmd("highlight! link NeopostmanCursorLine Character")
 end
@@ -155,7 +155,7 @@ end
 
 function M.Layout:run_script(line)
   -- self:show_loading("Loading.." .. self.last_command .. "..")
-  self:show_loading("Loading..")
+  S.Spinner:show_loading("Loading..")
 
   Job:new({
     command = "chmod",
@@ -168,7 +168,7 @@ function M.Layout:run_script(line)
           local res = table.concat(j:result(), "\n")
 
           vim.schedule(function()
-            self:hide_loading()
+            S.Spinner:hide_loading()
             self.content = res
             U.put_text(self.split2.bufnr, res)
           end)
@@ -214,72 +214,4 @@ function M.Layout:get_scripts()
   U.put_text(self.split1.bufnr, res)
 end
 
---TODO: Make the loader stand alone
-M.Layout.spinner_index = 1
-M.Layout.spinner_timer = nil
-local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
-
-function M.Layout:show_loading(message)
-  if self.loading_popup then
-    return
-  end
-
-  self.loading_popup = Popup({
-    enter = false,
-    focusable = false,
-    border = {
-      style = "rounded",
-      text = {
-        top = "",
-        top_align = "center",
-      },
-    },
-    position = "50%",
-    size = {
-      width = 30,
-      height = 3,
-    },
-    relative = "editor",
-  })
-
-  self.loading_popup:mount()
-
-  self.spinner_index = 1
-  local function center_line(text)
-    local width = 30
-    local padding = math.floor((width - #text) / 2)
-    return string.rep(" ", padding) .. text
-  end
-
-  self.spinner_timer = vim.loop.new_timer()
-  self.spinner_timer:start(
-    0,
-    100,
-    vim.schedule_wrap(function()
-      if not self.loading_popup then
-        return
-      end
-
-      local frame = spinner_frames[self.spinner_index]
-      local line = center_line(frame .. " " .. message)
-
-      vim.api.nvim_buf_set_lines(self.loading_popup.bufnr, 0, -1, false, { "", line, "" })
-
-      self.spinner_index = (self.spinner_index % #spinner_frames) + 1
-    end)
-  )
-end
-
-function M.Layout:hide_loading()
-  if self.spinner_timer then
-    self.spinner_timer:stop()
-    self.spinner_timer:close()
-    self.spinner_timer = nil
-  end
-
-  if self.loading_popup then
-    self.loading_popup:unmount()
-    self.loading_popup = nil
-  end
-end
 return M
