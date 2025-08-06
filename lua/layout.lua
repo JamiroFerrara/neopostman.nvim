@@ -154,33 +154,27 @@ function M.Layout:run_current()
 end
 
 function M.Layout:run_script(line)
-  -- self:show_loading("Loading.." .. self.last_command .. "..")
   S.Spinner:show_loading("Loading..")
 
   Job:new({
-    command = "chmod",
-    args = { "+x", ".neopostman/" .. line },
-    on_exit = function()
-      Job:new({
-        command = "./.neopostman/" .. line,
-        cwd = vim.loop.cwd(), -- ensure working directory is correct
-        on_exit = function(j, return_val)
-          local res = table.concat(j:result(), "\n")
+    command = "sh",
+    args = { "-c", string.format("chmod +x .neopostman/%s && .neopostman/%s", line, line) },
+    cwd = vim.loop.cwd(),
+    on_exit = function(j, return_val)
+      local res = table.concat(j:result(), "\n")
 
-          vim.schedule(function()
-            S.Spinner:hide_loading()
-            self.content = res
-            U.put_text(self.split2.bufnr, res)
-          end)
-        end,
-        on_stderr = function(err, data)
-          if data then
-            vim.schedule(function()
-              vim.notify("stderr: " .. data, vim.log.levels.WARN)
-            end)
-          end
-        end,
-      }):start()
+      vim.schedule(function()
+        S.Spinner:hide_loading()
+        self.content = res
+        U.put_text(self.split2.bufnr, res)
+      end)
+    end,
+    on_stderr = function(_, data)
+      if data then
+        vim.schedule(function()
+          vim.notify("stderr: " .. data, vim.log.levels.WARN)
+        end)
+      end
     end,
   }):start()
 end
