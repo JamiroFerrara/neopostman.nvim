@@ -35,6 +35,7 @@ function M.Layout:init_highlights(args)
 end
 
 function M.Layout:init_events()
+  --NOTE: Setup completions for jq buffer
   self.jqsplit:on("InsertEnter", function()
     require("cmp").setup.buffer({
       sources = {
@@ -50,9 +51,13 @@ function M.Layout:init_events()
     })
   end)
 
-  -- Highlight current line only in split1
+  --NOTE: Highlight current line only in split1
   self.split1:on("CursorMoved", function()
     self:highlight_current_line()
+  end)
+
+  self.jqsplit:on("BufEnter", function()
+    vim.cmd("startinsert")
   end)
 end
 
@@ -98,6 +103,13 @@ function M.Layout:init_mappings()
   self.jqsplit:map("n", "<cr>", function() self:jq_exec() end, {})
   self.jqsplit:map("i", "<cr>", function() self:jq_exec() end, {})
   self.jqsplit:map("n", "q", function() self:toggle() end, {})
+end
+
+function M.Layout:focus(split)
+  -- Focus a split window
+  if split and split.winid then
+    vim.api.nvim_set_current_win(split.winid)
+  end
 end
 
 function M.Layout:jq_exec()
