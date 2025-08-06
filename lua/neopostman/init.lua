@@ -1,6 +1,6 @@
 local M = {}
-local U = require("./utils")
-local L = require("./layout")
+local U = require("neopostman.utils")
+local L = require("neopostman.layout")
 
 M.setup = function(config)
 	vim.api.nvim_create_user_command("Neopostman", M.run, {})
