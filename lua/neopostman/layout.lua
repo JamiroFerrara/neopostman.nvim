@@ -33,7 +33,7 @@ function M.Layout:init()
 
   --Traits
   toggleable(self, { self.split1, self.split2, self.jqsplit })
-  debuggable(self)
+  debuggable(self, { self.split1, self.split2, self.jqsplit })
 end
 
 function M.Layout:init_mappings()
