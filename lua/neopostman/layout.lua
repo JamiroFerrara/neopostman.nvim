@@ -2,7 +2,6 @@ local M = {}
 
 local Split = require("nui.split")
 local Object = require("nui.object")
-local Job = require("plenary.job")
 local U = require("neopostman.utils")
 local S = require("neopostman.spinner")
 
@@ -32,6 +31,7 @@ function M.Layout:init()
   self:init_mappings()
   self:init_events()
 
+  --Traits
   toggleable(self, { self.split1, self.split2, self.jqsplit })
   debuggable(self)
 end
@@ -64,7 +64,6 @@ function M.Layout:init_events()
 
   self.split1:on("CursorMoved", function() --Highlight current line only in split1
     U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
-    self:print("hello!");
   end)
 
   self.jqsplit:on("BufEnter", function() --enter insert mode in jq split

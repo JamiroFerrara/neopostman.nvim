@@ -42,6 +42,10 @@ return function(self, splits)
       end
     end
 
+    if self.debug_buf ~= nil then
+      self:close_debug()
+    end
+
     self.is_open = false
   end
 

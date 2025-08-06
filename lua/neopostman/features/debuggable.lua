@@ -3,14 +3,15 @@ local U = require("neopostman.utils")
 
 -- features/debuggable.lua
 return function(self)
+  self.is_large_debug = false
   self.is_open_debug = false
   self.debug_buf = Popup({
-    position = "50%",
+    position = "100%",
     size = {
-      width = 80,
-      height = 40,
+      width = "100%",
+      height = "20%",
     },
-    enter = true,
+    enter = false,
     focusable = true,
     zindex = 999,
     relative = "editor",
@@ -19,10 +20,31 @@ return function(self)
     },
   })
 
-  self.debug_buf:map("n", "<Esc>", function() self:close() end, {})
-  self.debug_buf:map("n", "q", function() self:close() end, {})
   vim.keymap.set("t", "\\", function() self:toggle_debug() end, {})
   vim.keymap.set("n", "\\", function() self:toggle_debug() end, {})
+  self.debug_buf:map("n", "<Esc>", function() self:close() end, {})
+  self.debug_buf:map("n", "q", function() self:close() end, {})
+  self.debug_buf:map("n", "L", function() self:toggle_large_debug() end, {})
+  self.debug_buf:map("n", "q", function() self:close() end, {})
+
+  function self:toggle_large_debug()
+    if self.is_large_debug then
+      self.is_large_debug = false
+      self.debug_buf:update_layout({
+        size = {
+          width = "100%",
+          height = "20%",
+        }})
+    else
+      self.is_large_debug = true
+      self.debug_buf:update_layout({
+        size = {
+          width = "100%",
+          height = "50%",
+        }})
+    end
+    self:open_debug()
+  end
 
   function self:print(message)
     U.append_text(self.debug_buf.bufnr, message)
