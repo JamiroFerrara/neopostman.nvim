@@ -4,7 +4,6 @@ local Split = require("nui.split")
 local Object = require("nui.object")
 local U = require("neopostman.utils")
 local S = require("neopostman.spinner")
-local T = require("neopostman.table")
 
 ---@diagnostic disable: undefined-field
 local toggleable = require("neopostman.features.toggleable")
@@ -22,9 +21,6 @@ function M.Layout:init()
   self.split1 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
   self.split2 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
   self.jqsplit = Split({ relative = "editor", position = "bottom", size = "10%", enter = false })
-  self.table = Split({ relative = "editor", position = "right", size = "50%", enter = false })
-
-  T.TableView:init(U.read_json_file("./test.json"))
 
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
@@ -32,7 +28,7 @@ function M.Layout:init()
   self:init_events()
 
   --Traits
-  toggleable(self, { self.table })
+  toggleable(self, { self.split1, self.split2, self.jqsplit })
   debuggable(self, { self.split1, self.split2, self.jqsplit })
 end
 

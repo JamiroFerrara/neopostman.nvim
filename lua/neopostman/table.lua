@@ -32,11 +32,9 @@ function M.TableView:init(data)
   self.split:mount()
   self.bufnr = self.split.bufnr
 
-  U.nmap("<cr>", function() M.TableView:exec() end, self.bufnr)
   vim.api.nvim_buf_set_option(self.bufnr, "buftype", "nofile")
   vim.api.nvim_buf_set_option(self.bufnr, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(self.bufnr, "swapfile", false)
-  self.split:map("n", "q", function() self:toggle() end, {})
 
   local lines = self:build_table_lines()
   vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
@@ -58,12 +56,12 @@ function M.TableView:init(data)
   toggleable(self, { self.split })
   debuggable(self, { self.split })
 
+  self.is_open = true
   self:open_debug()
-  vim.o.guicursor = "n-v-c-sm:block-Cursor/lCursor-blinkon0"
 end
 
 function M.TableView:move_left()
-  self.y= self.y - 1
+  self.y = self.y - 1
   self:print("y:" .. self.y .. " - " .. "x:" .. self.x)
   self:select_cell(self.x, self.y)
 end
