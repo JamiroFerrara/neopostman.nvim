@@ -6,25 +6,21 @@ local Object = require("nui.object")
 local Job = require("plenary.job")
 local U = require("./utils")
 
-local default_split_config = {
-  relative = "editor",
-  position = "right",
-  size = "50%",
-  enter = false,
-}
-
 ---@class JLayout
 ---@field open boolean
 ---@field split1 unknown
 ---@field split2 unknown
+---@field jqsplit unknown
 ---@field prev_buf unknown
 ---@field last_command string
+---@field content string
 M.Layout = Object("JLayout")
 
 function M.Layout:init()
   self.open = false
-  self.split1 = Split(default_split_config)
-  self.split2 = Split(default_split_config)
+  self.split1 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
+  self.split2 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
+  self.jqsplit = Split({ relative = "editor", position = "bottom", size = "10%", enter = false })
 
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
@@ -33,7 +29,20 @@ function M.Layout:init()
 end
 
 function M.Layout:init_events()
-  ---TODO:
+  self.jqsplit:on("InsertEnter", function()
+    require("cmp").setup.buffer({
+      sources = {
+        {
+          name = "buffer",
+          option = {
+            get_bufnrs = function()
+              return { self.split2.bufnr }
+            end,
+          },
+        },
+      },
+    })
+  end)
 end
 
 function M.Layout:close()
@@ -51,8 +60,6 @@ function M.Layout:init_mappings()
   self.split1:map("n", "q", function() self:toggle() end, {})
   self.split1:map("n", "<leader>q", function() self:toggle() end, {})
   self.split1:map("n", "e", function() self:edit() end, {})
-  self.split1:map("n", "J", function() self:page(true) end, {})
-  self.split1:map("n", "K", function() self:page(false) end, {})
   self.split1:map("n", "<C-p>", function() self:toggle() end, {})
 
   ---Split 2
@@ -60,7 +67,27 @@ function M.Layout:init_mappings()
   self.split2:map("n", "<cr>", function() self:rerun() end, {})
   self.split2:map("n", "q", function() self:toggle() end, {})
   self.split2:map("n", "<leader>q", function() self:toggle() end, {})
-  self.split2:map("n", "<C-p>", function() self:toggle() end, {})
+
+  ---Jq 2
+  self.jqsplit:map("n", "<cr>", function() self:jq_exec() end, {})
+end
+
+function M.Layout:jq_exec()
+  local command = vim.api.nvim_get_current_line()
+  if command == nil or command[1] == "" then
+    self:rerun()
+    return
+  end
+
+  -- Write JSON content to a temporary file
+  local tmpfile = vim.fn.tempname()
+  vim.fn.writefile(vim.split(self.content, "\n"), tmpfile)
+
+  local cmd = string.format("jq '%s' %s", command, tmpfile)
+  local res = vim.fn.system(cmd)
+  vim.fn.delete(tmpfile) -- clean up
+
+  vim.api.nvim_buf_set_lines(self.split2.bufnr, 0, -1, false, vim.split(res, "\n"))
 end
 
 function M.Layout:edit()
@@ -102,6 +129,7 @@ function M.Layout:run_script(line)
 
           vim.schedule(function()
             self:hide_loading()
+            self.content = res
             U.put_text(self.split2.bufnr, res)
           end)
         end,
@@ -123,17 +151,19 @@ function M.Layout:toggle()
     vim.api.nvim_set_current_buf(self.split1.bufnr)
 
     self.split2:show()
+    self.jqsplit:show()
     self.open = true
   else
     self.split1:hide()
     self.split2:hide()
+    self.jqsplit:hide()
     self.open = false
 
     vim.api.nvim_set_current_buf(self.prev_buf)
 
     -- If the previous buffer was a terminal, enter terminal insert mode
-    if vim.bo[self.prev_buf].buftype == 'terminal' then
-      vim.cmd('startinsert')
+    if vim.bo[self.prev_buf].buftype == "terminal" then
+      vim.cmd("startinsert")
     end
   end
 end
