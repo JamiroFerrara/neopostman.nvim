@@ -7,7 +7,7 @@ local U = require("neopostman.utils")
 local S = require("neopostman.spinner")
 
 ---@class JLayout
----@field open boolean
+---@field is_open boolean
 ---@field split1 unknown
 ---@field split2 unknown
 ---@field jqsplit unknown
@@ -17,7 +17,7 @@ local S = require("neopostman.spinner")
 M.Layout = Object("JLayout")
 
 function M.Layout:init()
-  self.open = false
+  self.is_open = false
   self.split1 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
   self.split2 = Split({ relative = "editor", position = "right", size = "50%", enter = false })
   self.jqsplit = Split({ relative = "editor", position = "bottom", size = "10%", enter = false })
@@ -28,28 +28,6 @@ function M.Layout:init()
   self:init_events()
 end
 
-function M.Layout:init_events()
-  self.jqsplit:on("InsertEnter", function() --nvim-cmp from buffer
-    U.completion_from_buffer(self.split2.bufnr)
-  end)
-
-  self.split1:on("CursorMoved", function() --Highlight current line only in split1
-    U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
-  end)
-
-  self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
-    vim.cmd("startinsert")
-  end)
-end
-
-function M.Layout:close()
-  self.split1:hide()
-  self.split2:hide()
-  vim.api.nvim_set_current_buf(self.prev_buf)
-  self.open = false
-end
-
----TODO: Make this configurable from setup
 function M.Layout:init_mappings()
   ---Split 1
   self.split1:map("n", "<cr>", function() self:run_current() end, {})
@@ -71,10 +49,39 @@ function M.Layout:init_mappings()
   self.jqsplit:map("n", "q", function() self:toggle() end, {})
 end
 
-function M.Layout:focus(split)
-  -- Focus a split window
-  if split and split.winid then
-    vim.api.nvim_set_current_win(split.winid)
+function M.Layout:init_events()
+  self.jqsplit:on("InsertEnter", function() --nvim-cmp from buffer
+    U.completion_from_buffer(self.split2.bufnr)
+  end)
+
+  self.split1:on("CursorMoved", function() --Highlight current line only in split1
+    U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
+  end)
+
+  self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
+    vim.cmd("startinsert")
+  end)
+end
+
+function M.Layout:open()
+  self.prev_buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_set_current_buf(self.split1.bufnr)
+
+  self.split2:show()
+  self.jqsplit:show()
+  self.is_open = true
+end
+
+function M.Layout:close()
+  self.split1:hide()
+  self.split2:hide()
+  self.jqsplit:hide()
+  vim.api.nvim_set_current_buf(self.prev_buf)
+  self.is_open = false
+
+  -- If the previous buffer was a terminal, enter terminal insert mode
+  if vim.bo[self.prev_buf].buftype == "terminal" then
+    vim.cmd("startinsert")
   end
 end
 
@@ -132,30 +139,15 @@ function M.Layout:run_script(line)
         self.content = res
         U.put_text(self.split2.bufnr, res)
       end)
-    end
+    end,
   }):start()
 end
 
 function M.Layout:toggle()
-  if self.open == false then
-    self.prev_buf = vim.api.nvim_get_current_buf()
-    vim.api.nvim_set_current_buf(self.split1.bufnr)
-
-    self.split2:show()
-    self.jqsplit:show()
-    self.open = true
+  if self.is_open == false then
+    self:open()
   else
-    self.split1:hide()
-    self.split2:hide()
-    self.jqsplit:hide()
-    self.open = false
-
-    vim.api.nvim_set_current_buf(self.prev_buf)
-
-    -- If the previous buffer was a terminal, enter terminal insert mode
-    if vim.bo[self.prev_buf].buftype == "terminal" then
-      vim.cmd("startinsert")
-    end
+    self:close()
   end
 end
 

@@ -96,4 +96,10 @@ M.completion_from_buffer = function(bufnr)
   })
 end
 
+M.focus = function(split)
+  if split and split.winid then
+    vim.api.nvim_set_current_win(split.winid)
+  end
+end
+
 return M
