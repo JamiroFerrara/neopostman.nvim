@@ -29,28 +29,15 @@ function M.Layout:init()
 end
 
 function M.Layout:init_events()
-  --NOTE: Setup completions for jq buffer
-  self.jqsplit:on("InsertEnter", function()
-    require("cmp").setup.buffer({
-      sources = {
-        {
-          name = "buffer",
-          option = {
-            get_bufnrs = function()
-              return { self.split2.bufnr }
-            end,
-          },
-        },
-      },
-    })
+  self.jqsplit:on("InsertEnter", function() --nvim-cmp from buffer
+    U.completion_from_buffer(self.split2.bufnr)
   end)
 
-  --NOTE: Highlight current line only in split1
-  self.split1:on("CursorMoved", function()
-      U.highlight_current_line(self.split1.bufnr, "Character")
+  self.split1:on("CursorMoved", function() --Highlight current line only in split1
+    U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
   end)
 
-  self.jqsplit:on("BufEnter", function()
+  self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
     vim.cmd("startinsert")
   end)
 end
@@ -145,10 +132,7 @@ function M.Layout:run_script(line)
         self.content = res
         U.put_text(self.split2.bufnr, res)
       end)
-    end,
-    on_stderr = function(_, data)
-      vim.notify("stderr: " .. data, vim.log.levels.WARN)
-    end,
+    end
   }):start()
 end
 
