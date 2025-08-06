@@ -24,8 +24,14 @@ function M.Layout:init()
 
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
+  self:init_highlights()
   self:init_mappings()
   self:init_events()
+end
+
+function M.Layout:init_highlights(args)
+  self._active_ns = vim.api.nvim_create_namespace("neopostman_hl")
+  vim.cmd("highlight! link NeopostmanCursorLine Character")
 end
 
 function M.Layout:init_events()
@@ -43,6 +49,26 @@ function M.Layout:init_events()
       },
     })
   end)
+
+  -- Highlight current line only in split1
+  self.split1:on("CursorMoved", function()
+    self:highlight_current_line()
+  end)
+end
+
+function M.Layout:highlight_current_line()
+  local bufnr = self.split1.bufnr
+  local row, byte_col = unpack(vim.api.nvim_win_get_cursor(0))
+
+  -- Clear previous highlights in this namespace
+  vim.api.nvim_buf_clear_namespace(bufnr, self._active_ns, 0, -1)
+
+  local line = vim.api.nvim_buf_get_lines(bufnr, row - 1, row, false)[1]
+  if not line then
+    return
+  end
+
+  vim.api.nvim_buf_add_highlight(bufnr, self._active_ns, "NeopostmanCursorLine", row - 1, 0, -1)
 end
 
 function M.Layout:close()
@@ -70,6 +96,8 @@ function M.Layout:init_mappings()
 
   ---Jq 2
   self.jqsplit:map("n", "<cr>", function() self:jq_exec() end, {})
+  self.jqsplit:map("i", "<cr>", function() self:jq_exec() end, {})
+  self.jqsplit:map("n", "q", function() self:toggle() end, {})
 end
 
 function M.Layout:jq_exec()
