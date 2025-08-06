@@ -8,6 +8,7 @@ local S = require("neopostman.spinner")
 
 ---@diagnostic disable: undefined-field
 local toggleable = require("neopostman.features.toggleable")
+local debuggable = require("neopostman.features.debuggable")
 
 ---@class JLayout
 ---@field is_open boolean
@@ -32,6 +33,7 @@ function M.Layout:init()
   self:init_events()
 
   toggleable(self, { self.split1, self.split2, self.jqsplit })
+  debuggable(self)
 end
 
 function M.Layout:init_mappings()
@@ -62,6 +64,7 @@ function M.Layout:init_events()
 
   self.split1:on("CursorMoved", function() --Highlight current line only in split1
     U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
+    self:print("hello!");
   end)
 
   self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
