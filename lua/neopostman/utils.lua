@@ -1,7 +1,20 @@
 local M = {}
 
+local Job = require("plenary.job")
+
 M.put_text = function(buffer, text)
   vim.api.nvim_buf_set_lines(buffer, 0, -1, false, vim.split(text, "\n"))
+end
+
+M.append_text = function(buffer, text)
+  local current_lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
+  local new_lines = vim.split(text, "\n")
+  local updated_lines = vim.list_extend(current_lines, new_lines)
+  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, updated_lines)
+  ---force redraw
+  vim.api.nvim_buf_call(buffer, function()
+    vim.cmd("normal! G") -- Move to the end of the buffer
+  end)
 end
 
 M.get_text = function(buffer)
@@ -13,7 +26,7 @@ end
 -- Writes content lines to a temp file, runs a function with the filename, then deletes the file
 function M.with_tempfile(content_lines, fn)
   local tmpfile = vim.fn.tempname()
-  vim.fn.writefile(content_lines, tmpfile)
+  vim.fn.writefile(vim.split(content_lines, "\n"), tmpfile)
   local result = fn(tmpfile)
   vim.fn.delete(tmpfile)
   return result
@@ -99,6 +112,27 @@ end
 M.focus = function(split)
   if split and split.winid then
     vim.api.nvim_set_current_win(split.winid)
+  end
+end
+
+M.run = function(command, callback)
+  if callback ~= nil then
+    return Job:new({
+      command = "sh",
+      args = { "-c", command },
+      cwd = vim.loop.cwd(),
+      on_exit = function(j, return_val)
+        local res = table.concat(j:result(), "\n")
+
+        vim.schedule(function()
+          if callback then
+            callback(res, return_val)
+          end
+        end)
+      end,
+    }):start()
+  else
+    return vim.fn.system(command)
   end
 end
 
