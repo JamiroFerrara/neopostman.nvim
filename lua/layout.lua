@@ -43,6 +43,7 @@ function M.Layout:close()
   self.open = false
 end
 
+---TODO: Make this configurable from setup
 function M.Layout:init_mappings()
   ---Split 1
   self.split1:map("n", "<cr>", function() self:run_current() end, {})
@@ -52,16 +53,14 @@ function M.Layout:init_mappings()
   self.split1:map("n", "e", function() self:edit() end, {})
   self.split1:map("n", "J", function() self:page(true) end, {})
   self.split1:map("n", "K", function() self:page(false) end, {})
+  self.split1:map("n", "<C-p>", function() self:toggle() end, {})
 
   ---Split 2
   self.split2:map("n", "r", function() self:rerun() end, {})
   self.split2:map("n", "<cr>", function() self:rerun() end, {})
   self.split2:map("n", "q", function() self:toggle() end, {})
   self.split2:map("n", "<leader>q", function() self:toggle() end, {})
-end
-
-function M.Layout:page(up)
-  ---TODO: Figure this out
+  self.split2:map("n", "<C-p>", function() self:toggle() end, {})
 end
 
 function M.Layout:edit()
@@ -131,6 +130,11 @@ function M.Layout:toggle()
     self.open = false
 
     vim.api.nvim_set_current_buf(self.prev_buf)
+
+    -- If the previous buffer was a terminal, enter terminal insert mode
+    if vim.bo[self.prev_buf].buftype == 'terminal' then
+      vim.cmd('startinsert')
+    end
   end
 end
 
