@@ -3,10 +3,13 @@ local Split = require("nui.split")
 local U = require("./utils")
 
 local debuggable = require("neopostman.features.debuggable")
+local toggleable = require("neopostman.features.toggleable")
 
 M.TableView = {}
 
 function M.TableView:init(data)
+  self.x = 0
+  self.y = 0
   self.data = M.convert_json_array_to_flat_table(data) or {}
   self.total_width = vim.o.columns
   self.col_widths = self:calculate_full_column_widths(self.data, self.total_width)
@@ -33,9 +36,18 @@ function M.TableView:init(data)
   vim.api.nvim_buf_set_option(self.bufnr, "buftype", "nofile")
   vim.api.nvim_buf_set_option(self.bufnr, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(self.bufnr, "swapfile", false)
+  self.split:map("n", "q", function() self:toggle() end, {})
 
   local lines = self:build_table_lines()
   vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
+
+  self.split:on("BufEnter", function()
+    self:print("Entered!")
+    self:select_cell(1, 1)
+  end)
+
+  --Mappings
+  self:init_mappings()
 
   -- Create custom highlight group with red text
   -- vim.cmd("highlight TableHover guifg=#ff0000 gui=bold")
@@ -43,7 +55,76 @@ function M.TableView:init(data)
 
   self:setup_highlighting()
 
+  toggleable(self, { self.split })
   debuggable(self, { self.split })
+
+  self:open_debug()
+  vim.o.guicursor = "n-v-c-sm:block-Cursor/lCursor-blinkon0"
+end
+
+function M.TableView:move_left()
+  self.y= self.y - 1
+  self:print("y:" .. self.y .. " - " .. "x:" .. self.x)
+  self:select_cell(self.x, self.y)
+end
+
+function M.TableView:move_right()
+  self.y = self.y + 1
+  self:print("y:" .. self.y .. " - " .. "x:" .. self.x)
+  self:select_cell(self.x, self.y)
+end
+
+function M.TableView:move_up()
+  self.x = self.x - 1
+  self:print("y:" .. self.y .. " - " .. "x:" .. self.x)
+  self:select_cell(self.x, self.y)
+end
+
+function M.TableView:move_down()
+  self.x = self.x + 1
+  self:print("y:" .. self.y .. " - " .. "x:" .. self.x)
+  self:select_cell(self.x, self.y)
+end
+
+function M.TableView:init_mappings()
+  self.split:map("n", "j", function() self:move_down() end, {})
+  self.split:map("n", "h", function() self:move_left() end, {})
+  self.split:map("n", "l", function() self:move_right() end, {})
+  self.split:map("n", "k", function() self:move_up() end, {})
+
+  self.split:map("n", "w", function() self:move_right() end, {})
+  self.split:map("n", "b", function() self:move_left() end, {})
+end
+
+function M.TableView:select_cell(x, y)
+  local num_rows = #self.data
+  local num_cols = #self.col_widths
+
+  -- Clamp to valid bounds
+  x = math.max(1, math.min(x, num_rows))
+  y = math.max(1, math.min(y, num_cols))
+
+  self.x = x
+  self.y = y
+
+  -- Line number in the buffer (add 3 for top border, header, and header border)
+  local row = x + 3
+
+  -- Calculate visual column start of the cell
+  local visual_col = 1
+  for i = 1, y - 1 do
+    visual_col = visual_col + self.col_widths[i] + 1
+  end
+
+  -- Centered position inside the cell
+  local cell_width = self.col_widths[y]
+  local center_offset = math.floor(cell_width / 2)
+
+  -- Final visual column to place cursor
+  local target_col = visual_col + center_offset
+
+  -- Move cursor
+  vim.api.nvim_win_set_cursor(self.split.winid, { row, target_col })
 end
 
 function M.TableView:exec()
@@ -224,17 +305,6 @@ M.convert_json_array_to_flat_table = function(json_array)
   end
 
   return flat_table
-end
-
-M.append_text = function(buffer, text)
-  local current_lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
-  local new_lines = vim.split(text, "\n")
-  local updated_lines = vim.list_extend(current_lines, new_lines)
-  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, updated_lines)
-  ---force redraw
-  vim.api.nvim_buf_call(buffer, function()
-    vim.cmd("normal! G") -- Move to the end of the buffer
-  end)
 end
 
 return M
