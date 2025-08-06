@@ -20,8 +20,6 @@ return function(self, bufs)
     },
   })
 
-  -- vim.keymap.set("t", "\\", function() self:toggle_debug() end, {})
-  -- vim.keymap.set("n", "\\", function() self:toggle_debug() end, {})
   self.debug_buf:map("n", "<Esc>", function() self:close() end, {})
   self.debug_buf:map("n", "q", function() self:close() end, {})
   self.debug_buf:map("n", "L", function() self:toggle_large_debug() end, {})
@@ -32,6 +30,13 @@ return function(self, bufs)
       vim.keymap.set("n", "\\",
         function()
           self:toggle_debug() 
+        end,
+        { buffer = buf.bufnr, noremap = true, silent = true }
+      )
+
+      vim.keymap.set("n", "<C-\\>",
+        function()
+          self:toggle_large_debug() 
         end,
         { buffer = buf.bufnr, noremap = true, silent = true }
       )

@@ -11,10 +11,6 @@ local debuggable = require("neopostman.features.debuggable")
 
 ---@class JLayout
 ---@field is_open boolean
----@field split1 unknown
----@field split2 unknown
----@field split3 unknown
----@field jqsplit unknown
 ---@field prev_buf unknown
 ---@field last_command string
 ---@field content string
