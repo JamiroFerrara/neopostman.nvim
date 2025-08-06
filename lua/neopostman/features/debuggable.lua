@@ -1,24 +1,11 @@
-local Popup = require("nui.popup")
+local Split = require("nui.split")
 local U = require("neopostman.utils")
 
 -- features/debuggable.lua
 return function(self, bufs)
   self.is_large_debug = false
   self.is_open_debug = false
-  self.debug_buf = Popup({
-    position = "100%",
-    size = {
-      width = "100%",
-      height = "20%",
-    },
-    enter = false,
-    focusable = true,
-    zindex = 999,
-    relative = "editor",
-    border = {
-      style = "rounded",
-    },
-  })
+  self.debug_buf = Split({ relative = "editor", position = "bottom", size = "20%", enter = false })
 
   self.debug_buf:map("n", "<Esc>", function() self:close() end, {})
   self.debug_buf:map("n", "q", function() self:close() end, {})
@@ -29,39 +16,11 @@ return function(self, bufs)
     if buf.bufnr then
       vim.keymap.set("n", "\\",
         function()
-          self:toggle_debug() 
-        end,
-        { buffer = buf.bufnr, noremap = true, silent = true }
-      )
-
-      vim.keymap.set("n", "<C-\\>",
-        function()
-          self:toggle_large_debug() 
+          self:toggle_debug()
         end,
         { buffer = buf.bufnr, noremap = true, silent = true }
       )
     end
-  end
-
-  function self:toggle_large_debug()
-    if self.is_large_debug then
-      self.is_large_debug = false
-      self.debug_buf:update_layout({
-        size = {
-          width = "100%",
-          height = "20%",
-        },
-      })
-    else
-      self.is_large_debug = true
-      self.debug_buf:update_layout({
-        size = {
-          width = "100%",
-          height = "50%",
-        },
-      })
-    end
-    self:open_debug()
   end
 
   function self:print(message)
