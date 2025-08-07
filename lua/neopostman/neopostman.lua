@@ -22,6 +22,7 @@ function M.Neopostman:init()
   self.split1 = Split({ position = "right", size = "50%", enter = false })
   self.split2 = Split({ position = "right", size = "50%", enter = false })
   self.jqsplit = Split({ position = "bottom", size = "10%", enter = false })
+  self.json = {}
 
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
@@ -66,17 +67,17 @@ function M.Neopostman:run()
 	self:toggle()
 end
 
-function M.Neopostman:jq_exec(content, buf)
+function M.Neopostman:jq_exec()
   local command = vim.api.nvim_get_current_line()
   if command == nil or command[1] == "" then
     self:rerun()
     return
   end
 
-  U.with_tempfile(content, function(tmpfile)
+  U.with_tempfile(self.content, function(tmpfile)
     local cmd = string.format("jq '%s' %s", command, tmpfile)
     local res = vim.fn.system(cmd)
-    vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, vim.split(res, "\n"))
+    vim.api.nvim_buf_set_lines(self.split2.bufnr, 0, -1, false, vim.split(res, "\n"))
   end)
 end
 
