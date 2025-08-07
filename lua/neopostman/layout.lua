@@ -36,21 +36,16 @@ function M.Layout:init_mappings()
   ---Split 1
   self.split1:map("n", "<cr>", function() self:run_current() end, {})
   self.split1:map("n", "r", function() self:rerun() end, {})
-  self.split1:map("n", "q", function() self:toggle() end, {})
-  self.split1:map("n", "<leader>q", function() self:toggle() end, {})
   self.split1:map("n", "e", function() self:edit() end, {})
   self.split1:map("n", "<C-p>", function() self:toggle() end, {})
 
   ---Split 2
   self.split2:map("n", "r", function() self:rerun() end, {})
   self.split2:map("n", "<cr>", function() self:rerun() end, {})
-  self.split2:map("n", "q", function() self:toggle() end, {})
-  self.split2:map("n", "<leader>q", function() self:toggle() end, {})
 
   ---Jq 2
   self.jqsplit:map("n", "<cr>", function() self:jq_exec() end, {})
   self.jqsplit:map("i", "<cr>", function() self:jq_exec() end, {})
-  self.jqsplit:map("n", "q", function() self:toggle() end, {})
 end
 
 function M.Layout:init_events()
