@@ -9,6 +9,7 @@ local highlightable = require("neopostman.features.highlightable")
 ---@diagnostic disable: undefined-field
 local toggleable = require("neopostman.features.toggleable")
 local debuggable = require("neopostman.features.debuggable")
+local insertable = require("neopostman.features.insertable")
 
 ---@class JLayout
 ---@field is_open boolean
@@ -31,16 +32,19 @@ function M.Layout:init()
   --Traits
   toggleable(self, { self.split1, self.split2, self.jqsplit })
   debuggable(self, { self.split1, self.split2, self.jqsplit })
+
   highlightable(self, self.split1, "Character")
   highlightable(self, self.split2, "Error")
+
+  insertable(self, self.jqsplit)
 end
 
 function M.Layout:init_mappings()
   ---Split 1
+  self.split1:map("n", "<C-p>", function() self:toggle() end, {})
   self.split1:map("n", "<cr>", function() self:run_current() end, {})
   self.split1:map("n", "r", function() self:rerun() end, {})
   self.split1:map("n", "e", function() self:edit() end, {})
-  self.split1:map("n", "<C-p>", function() self:toggle() end, {})
 
   ---Split 2
   self.split2:map("n", "r", function() self:rerun() end, {})
@@ -54,10 +58,6 @@ end
 function M.Layout:init_events()
   self.jqsplit:on("InsertEnter", function() --nvim-cmp from buffer
     U.completion_from_buffer(self.split2.bufnr)
-  end)
-
-  self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
-    vim.cmd("startinsert")
   end)
 end
 
