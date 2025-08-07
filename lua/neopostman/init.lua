@@ -1,9 +1,11 @@
 ---@diagnostic disable: undefined-field
 local M = {}
-local L = require("neopostman.neogithub")
+local G = require("neopostman.neogithub")
+local P = require("neopostman.neopostman")
 
 M.setup = function(config)
-	L.Neogithub:init()
+	G.Neogithub:init()
+	P.Neopostman:init()
 end
 
 return M

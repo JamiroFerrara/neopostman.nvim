@@ -29,19 +29,14 @@ function M.Neogithub:init()
 end
 
 function M.Neogithub:init_mappings()
-  self.split1:map("n", "p", function()
-    self:pull()
-  end, {})
-  self.split1:map("n", "n", function()
-    self:new("test")
-  end, {})
+  self.split1:map("n", "p", function() self:pull() end, {})
+  self.split1:map("n", "n", function() self:create() end, {})
+  self.split1:map("n", "d", function() self:delete() end, {})
 end
 
 function M.Neogithub:pull()
   S.Spinner:show_loading("Pulling repositories..")
-  local line = self:get_line()
-  --- Get up until first space
-  line = line:match("^(%S+)")
+  local line = self:get_repo_line()
 
   U.put_text(self.split1.bufnr, "")
   U.run("gh repo clone " .. line, function(res)
@@ -58,15 +53,13 @@ function M.Neogithub:pull()
   -- self:toggle()
 end
 
-function M.Neogithub:new(name)
+function M.Neogithub:create()
   U.put_text(self.split1.bufnr, { "public", "private" })
   self.split1:map("n", "<cr>", function()
     U.put_text(self.split1.bufnr, "")
     self.split1:map("n", "<cr>", function()
-      name = self:get_line()
-
+      self:create_repo(self:get_line())
       self:toggle()
-      self:create_repo(name)
     end, {})
   end, {})
 end
@@ -74,6 +67,18 @@ end
 function M.Neogithub:create_repo(name)
   U.run("gh repo create --private " .. name, function()
     U.run("gh repo clone " .. name)
+    self:toggle()
+  end)
+end
+
+
+function M.Neogithub:delete()
+  local line = self:get_repo_line()
+  self:delete_repo(line)
+end
+
+function M.Neogithub:delete_repo(name)
+  U.run("gh repo delete --yes " .. name, function()
     self:toggle()
   end)
 end
@@ -91,6 +96,13 @@ end
 function M.Neogithub:get_line()
   local line = vim.api.nvim_get_current_line()
   self.last_command = line
+  return line
+end
+
+function M.Neogithub:get_repo_line()
+  local line = self:get_line()
+  --- Get up until first space
+  line = line:match("^(%S+)")
   return line
 end
 
