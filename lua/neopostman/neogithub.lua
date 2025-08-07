@@ -8,6 +8,7 @@ local S = require("neopostman.components.spinner")
 local toggleable = require("neopostman.traits.toggleable")
 local debuggable = require("neopostman.traits.debuggable")
 local highlightable = require("neopostman.traits.highlightable")
+local help = require("neopostman.traits.help")
 
 ---@class Neogithub
 M.Neogithub = {}
@@ -26,6 +27,11 @@ function M.Neogithub:init()
   toggleable(self, { self.split1 })
   debuggable(self, { self.split1 })
   highlightable(self, self.split1, "Character")
+  help(self, { self.split1 }, {
+    "p: Pull repositories",
+    "n: Create a new repository",
+    "d: Delete a repository",
+  })
 end
 
 function M.Neogithub:init_mappings()
@@ -71,7 +77,6 @@ function M.Neogithub:create_repo(name)
   end)
 end
 
-
 function M.Neogithub:delete()
   local line = self:get_repo_line()
   self:delete_repo(line)
@@ -85,6 +90,7 @@ end
 
 function M.Neogithub:run()
   self:toggle()
+  U.put_text(self.split1.bufnr, "")
   S.Spinner:show_loading("Loading..")
 
   U.run("gh repo list", function(res)
