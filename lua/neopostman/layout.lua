@@ -4,6 +4,7 @@ local Split = require("nui.split")
 local Object = require("nui.object")
 local U = require("neopostman.utils")
 local S = require("neopostman.spinner")
+local highlightable = require("neopostman.features.highlightable")
 
 ---@diagnostic disable: undefined-field
 local toggleable = require("neopostman.features.toggleable")
@@ -30,6 +31,8 @@ function M.Layout:init()
   --Traits
   toggleable(self, { self.split1, self.split2, self.jqsplit })
   debuggable(self, { self.split1, self.split2, self.jqsplit })
+  highlightable(self, self.split1, "Character")
+  highlightable(self, self.split2, "Error")
 end
 
 function M.Layout:init_mappings()
@@ -51,11 +54,6 @@ end
 function M.Layout:init_events()
   self.jqsplit:on("InsertEnter", function() --nvim-cmp from buffer
     U.completion_from_buffer(self.split2.bufnr)
-  end)
-
-  self.split1:on("CursorMoved", function() --Highlight current line only in split1
-    U.highlight_current_line(self.split1.bufnr, "Character", M._active_ns)
-    self:print(self:get_line())
   end)
 
   self.jqsplit:on("BufEnter", function() --enter insert mode in jq split
