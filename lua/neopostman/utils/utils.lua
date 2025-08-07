@@ -3,7 +3,17 @@ local M = {}
 local Job = require("plenary.job")
 
 M.put_text = function(buffer, text)
-  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, vim.split(text, "\n"))
+  local lines = {}
+
+  if type(text) == "string" then
+    lines = vim.split(text, "\n", { plain = true })
+  elseif type(text) == "table" then
+    lines = text
+  else
+    error("Invalid type for text: expected string or table")
+  end
+
+  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
 end
 
 M.append_text = function(buffer, text)
@@ -115,15 +125,28 @@ M.focus = function(split)
   end
 end
 
-M.run = function(command, callback)
-  if callback ~= nil then
+M.run = function(command, callback, stream_callback)
+  if callback or stream_callback then
     return Job:new({
       command = "sh",
       args = { "-c", command },
       cwd = vim.loop.cwd(),
+      on_stdout = function(_, data)
+        if stream_callback and data then
+          vim.schedule(function()
+            stream_callback(data)
+          end)
+        end
+      end,
+      on_stderr = function(_, data)
+        if stream_callback and data then
+          vim.schedule(function()
+            stream_callback(data)
+          end)
+        end
+      end,
       on_exit = function(j, return_val)
         local res = table.concat(j:result(), "\n")
-
         vim.schedule(function()
           if callback then
             callback(res, return_val)
@@ -135,7 +158,6 @@ M.run = function(command, callback)
     return vim.fn.system(command)
   end
 end
-
 --- Read a JSON file and decode to Lua table
 ---@param filepath string
 ---@return table|nil
