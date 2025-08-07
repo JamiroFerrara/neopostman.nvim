@@ -10,6 +10,7 @@ local debuggable = require("neopostman.traits.debuggable")
 local insertable = require("neopostman.traits.insertable")
 local completable = require("neopostman.traits.completable")
 local highlightable = require("neopostman.traits.highlightable")
+local help = require("neopostman.traits.help")
 
 ---@class Layout
 M.Neopostman = {}
@@ -35,6 +36,13 @@ function M.Neopostman:init()
 
   insertable(self, self.jqsplit)
   completable(self.split2, self.jqsplit)
+  help(self, { self.split1, self.split2, self.jqsplit }, {
+    "p: Toggle Neopostman",
+    "r: Rerun last command",
+    "e: Edit current script",
+    "Enter: Run current script",
+    "jq: Enter jq command in bottom split",
+  })
 end
 
 function M.Neopostman:init_mappings()
