@@ -32,6 +32,8 @@ function M.Neogithub:init()
     "n: Create a new repository",
     "d: Delete a repository",
   })
+
+  self.split1:on("CursorMoved", function() self:print(self:get_line()) end)
 end
 
 function M.Neogithub:init_mappings()
