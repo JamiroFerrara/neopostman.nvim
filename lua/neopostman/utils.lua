@@ -140,21 +140,21 @@ end
 ---@param filepath string
 ---@return table|nil
 function M.read_json_file(filepath)
-    local ok, content = pcall(vim.fn.readfile, filepath)
-    if not ok then
-        vim.notify("Failed to read file: " .. filepath, vim.log.levels.ERROR)
-        return nil
-    end
+  local ok, content = pcall(vim.fn.readfile, filepath)
+  if not ok then
+    vim.notify("Failed to read file: " .. filepath, vim.log.levels.ERROR)
+    return nil
+  end
 
-    local json_str = table.concat(content, "\n")
+  local json_str = table.concat(content, "\n")
 
-    local ok2, result = pcall(vim.fn.json_decode, json_str)
-    if not ok2 then
-        vim.notify("Failed to decode JSON in file: " .. filepath, vim.log.levels.ERROR)
-        return nil
-    end
+  local ok2, result = pcall(vim.fn.json_decode, json_str)
+  if not ok2 then
+    vim.notify("Failed to decode JSON in file: " .. filepath, vim.log.levels.ERROR)
+    return nil
+  end
 
-    return result
+  return result
 end
 
 return M
