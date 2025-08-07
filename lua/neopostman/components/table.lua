@@ -1,9 +1,10 @@
+--FIX: UNFINISHED
 local M = {}
 local Split = require("nui.split")
 local U = require("./utils")
 
-local debuggable = require("neopostman.features.debuggable")
-local toggleable = require("neopostman.features.toggleable")
+local debuggable = require("neopostman.traits.debuggable")
+local toggleable = require("neopostman.traits.toggleable")
 
 M.TableView = {}
 

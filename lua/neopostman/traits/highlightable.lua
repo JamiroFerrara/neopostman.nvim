@@ -1,4 +1,4 @@
-local U = require("neopostman.utils")
+local U = require("neopostman.utils.utils")
 
 -- features/highlightable.lua
 return function(self, buf, highlight)

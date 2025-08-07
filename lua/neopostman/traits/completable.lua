@@ -1,4 +1,4 @@
-local U = require("neopostman.utils")
+local U = require("neopostman.utils.utils")
 
 -- features/completable.lua
 return function(from_buf, to_buf)

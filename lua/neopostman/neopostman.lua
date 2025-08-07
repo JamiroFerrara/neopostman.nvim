@@ -1,15 +1,15 @@
 local M = {}
 
 local Split = require("nui.split")
-local U = require("neopostman.utils")
-local S = require("neopostman.spinner")
+local U = require("neopostman.utils.utils")
+local S = require("neopostman.components.spinner")
 
 ---@diagnostic disable: undefined-field
-local toggleable = require("neopostman.features.toggleable")
-local debuggable = require("neopostman.features.debuggable")
-local insertable = require("neopostman.features.insertable")
-local completable = require("neopostman.features.completable")
-local highlightable = require("neopostman.features.highlightable")
+local toggleable = require("neopostman.traits.toggleable")
+local debuggable = require("neopostman.traits.debuggable")
+local insertable = require("neopostman.traits.insertable")
+local completable = require("neopostman.traits.completable")
+local highlightable = require("neopostman.traits.highlightable")
 
 ---@class Layout
 M.Neopostman = {}

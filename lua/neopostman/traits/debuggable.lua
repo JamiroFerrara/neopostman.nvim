@@ -1,5 +1,5 @@
 local Split = require("nui.split")
-local U = require("neopostman.utils")
+local U = require("neopostman.utils.utils")
 
 -- features/debuggable.lua
 return function(self, bufs)
