@@ -23,8 +23,13 @@ return function(self, bufs)
     end
   end
 
-  function self:print(message)
-    U.append_text(self.debug_buf.bufnr, message)
+  function self:print(...)
+    local args = {...}
+    local parts = {}
+    for i, v in ipairs(args) do
+      parts[i] = tostring(v)
+    end
+    U.append_text(self.debug_buf.bufnr, table.concat(parts, " "))
   end
 
   function self:open_debug()

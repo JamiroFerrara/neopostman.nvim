@@ -8,7 +8,7 @@ local S = require("neopostman.components.spinner")
 local toggleable = require("neopostman.traits.toggleable")
 local debuggable = require("neopostman.traits.debuggable")
 local highlightable = require("neopostman.traits.highlightable")
-local help = require("neopostman.traits.help")
+local map = require("neopostman.traits.help")
 
 ---@class Neogithub
 M.Neogithub = {}
@@ -19,26 +19,19 @@ function M.Neogithub:init()
   self.is_open = false
   self.split1 = Split({ position = "right", size = "50%", enter = false })
 
-  self:init_mappings()
-
   --Traits
   toggleable(self, { self.split1 })
   debuggable(self, { self.split1 })
   highlightable(self, self.split1, "Character")
-  help(self, { self.split1 }, {
-    "p: Pull repositories",
-    "n: Create a new repository",
-    "d: Delete a repository",
+
+  map(self, self.split1, {
+    { "n", "p", function() self:pull() end, "Pull repositories" },
+    { "n", "n", function() self:create() end, "Create a new repository" },
+    { "n", "d", function() self:delete() end, "Delete a repository" },
+    { { "n", "i" }, "r", function() self:refresh() end, "Refresh repositories" },
   })
 
   self.split1:on("CursorMoved", function() self:print(self:get_line()) end)
-end
-
-function M.Neogithub:init_mappings()
-  self.split1:map("n", "p", function() self:pull() end, {})
-  self.split1:map("n", "r", function() self:refresh() end, {})
-  self.split1:map("n", "n", function() self:create() end, {})
-  self.split1:map("n", "d", function() self:delete() end, {})
 end
 
 function M.Neogithub:pull()
