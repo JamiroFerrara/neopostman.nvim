@@ -1,6 +1,8 @@
 local Popup = require("nui.popup")
 local U = require("neopostman.utils.utils")
 
+local highlightable = require("neopostman.traits.highlightable")
+
 -- features/help.lua
 return function(self, buf, mappings)
   self.is_open_help = false
@@ -39,6 +41,8 @@ return function(self, buf, mappings)
       style = "rounded",
     },
   })
+
+  highlightable(self, self.help_buf, "Error");
 
   -- Close mappings for the help window
   self.help_buf:map("n", "<Esc>", function() self:close_help() end, {})
