@@ -28,6 +28,10 @@ function M.Neogrep:init()
     end
   end)
 
+  self.split1:on("BufEnter", function()
+    vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 0 })
+  end)
+
   --Traits
   toggleable(self, { self.split1 }, false)
 
@@ -44,6 +48,8 @@ function M.Neogrep:run()
   local res = vim.fn.input("Grep: ")
   local content = U.run("rg --vimgrep " .. res)
   U.put_text(self.split1.bufnr, content)
+
+  vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
 end
 
 function M.Neogrep:confirm_open_file()
