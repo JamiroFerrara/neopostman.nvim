@@ -1,5 +1,5 @@
 -- features/toggleable.lua
-return function(self, splits)
+return function(self, splits, embed)
   self.is_open = false
   self._toggleable_prev_buf = nil
 
@@ -10,7 +10,7 @@ return function(self, splits)
       split:map("n", "q", function() self:toggle() end, {})
       split:map("n", "<leader>q", function() self:toggle() end, {})
 
-      if i == 1 then
+      if i == 1 and embed then
       -- For first split: just load/set buffer but don't show it
       -- Assuming split has a 'bufnr' field or method to set buffer
       -- This part depends on split implementation, for example:

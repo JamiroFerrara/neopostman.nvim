@@ -21,7 +21,7 @@ function M.Neogithub:init()
   self.preview_split = Split({ position = "right", size = "50%", enter = false })
 
   -- Traits
-  toggleable(self, { self.split1, self.preview_split })
+  toggleable(self, { self.split1, self.preview_split }, true)
   debuggable(self, { self.split1, self.preview_split })
   highlightable(self, self.split1, "Character")
 

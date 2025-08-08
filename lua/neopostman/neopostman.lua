@@ -27,7 +27,7 @@ function M.Neopostman:init()
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
   --Traits
-  toggleable(self, { self.split1, self.split2, self.jqsplit })
+  toggleable(self, { self.split1, self.split2, self.jqsplit }, true)
   debuggable(self, { self.split1, self.split2, self.jqsplit })
 
   highlightable(self, self.split1, "Character")
