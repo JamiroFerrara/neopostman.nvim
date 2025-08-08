@@ -13,13 +13,23 @@ local toggleable = require("neopostman.traits.toggleable")
 M.Neogrep = {}
 
 function M.Neogrep:init()
-  vim.api.nvim_create_user_command("Neogrep", function() self:run() end, {})
-  vim.api.nvim_create_user_command("NeogrepWord", function() M.Neogrep:grep_under_cursor() end, {})
-  vim.api.nvim_create_user_command("NeogrepBuffer", function() M.Neogrep:grep_current_buffer() end, {})
-  vim.api.nvim_create_user_command("NeogrepWordInBuffer", function() M.Neogrep:grep_word_in_current_buffer() end, {})
- 
+  vim.api.nvim_create_user_command("Neogrep", function()
+    self:run()
+  end, {})
+  vim.api.nvim_create_user_command("NeogrepWord", function()
+    M.Neogrep:grep_under_cursor()
+  end, {})
+  vim.api.nvim_create_user_command("NeogrepBuffer", function()
+    M.Neogrep:grep_current_buffer()
+  end, {})
+  vim.api.nvim_create_user_command("NeogrepWordInBuffer", function()
+    M.Neogrep:grep_word_in_current_buffer()
+  end, {})
+
   --TODO: Move me out to NeoAwk module
-  vim.api.nvim_create_user_command("FilterBuffer", function() A.filter_buffer_lines_with_awk(vim.api.nvim_get_current_buf(), vim.fn.input("Find lines: ")) end, {})
+  vim.api.nvim_create_user_command("FilterBuffer", function()
+    A.filter_buffer_lines_with_awk(vim.api.nvim_get_current_buf(), vim.fn.input("Find lines: "))
+  end, {})
 
   self.split1 = Split({ position = "bottom", size = "20%", enter = true })
 
@@ -171,6 +181,8 @@ function M.Neogrep:grep_under_cursor()
   -- Run ripgrep with the word under the cursor
   local content = U.run("rg --vimgrep " .. word)
   U.put_text(self.split1.bufnr, content)
+  self.last_cursor_line = nil -- reset so open_file will run
+  self:open_file()
 end
 
 function M.Neogrep:grep_current_buffer()
@@ -198,6 +210,8 @@ function M.Neogrep:grep_current_buffer()
   U.put_text(self.split1.bufnr, content)
 
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+  self.last_cursor_line = nil -- reset so open_file will run
+  self:open_file()
 end
 
 function M.Neogrep:grep_word_in_current_buffer()
@@ -226,6 +240,8 @@ function M.Neogrep:grep_word_in_current_buffer()
   U.put_text(self.split1.bufnr, content)
 
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+  self.last_cursor_line = nil -- reset so open_file will run
+  self:open_file()
 end
 
 function M.Neogrep:next()
