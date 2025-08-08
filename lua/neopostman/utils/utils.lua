@@ -73,7 +73,7 @@ end
 -- @param bufnr number: Buffer number
 -- @param highlight_group string|nil: Highlight group name (defaults to "NeopostmanCursorLine")
 -- @param namespace number|nil: Namespace ID (creates one if not provided)
-M.highlight_current_line = function(bufnr, highlight_group, namespace)
+M.highlight_current_line = function(bufnr, highlight_group, namespace, delimiter, delimiter_count)
   if not vim.api.nvim_buf_is_loaded(bufnr) then
     return
   end
@@ -100,8 +100,29 @@ M.highlight_current_line = function(bufnr, highlight_group, namespace)
     return
   end
 
-  -- Apply highlight to the whole line
-  vim.api.nvim_buf_add_highlight(bufnr, namespace, highlight_group, row - 1, 0, -1)
+  local end_col = -1 -- Default to highlight the entire line
+
+  if delimiter then
+    delimiter_count = (delimiter_count and delimiter_count > 0) and delimiter_count or 1
+    local start_pos = 1
+    local found_pos = nil
+
+    for i = 1, delimiter_count do
+      local pos = line:find(delimiter, start_pos, true)
+      if not pos then
+        break
+      end
+      found_pos = pos
+      start_pos = pos + 1
+    end
+
+    if found_pos then
+      end_col = found_pos
+    end
+  end
+
+  -- Highlight from start (col 0) up to end_col (exclusive)
+  vim.api.nvim_buf_add_highlight(bufnr, namespace, highlight_group, row - 1, 0, end_col)
 end
 
 M.completion_from_buffer = function(bufnr)
