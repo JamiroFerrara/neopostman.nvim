@@ -13,18 +13,10 @@ local toggleable = require("neopostman.traits.toggleable")
 M.Neogrep = {}
 
 function M.Neogrep:init()
-  vim.api.nvim_create_user_command("Neogrep", function()
-    self:run()
-  end, {})
-  vim.api.nvim_create_user_command("NeogrepWord", function()
-    M.Neogrep:grep_under_cursor()
-  end, {})
-  vim.api.nvim_create_user_command("NeogrepBuffer", function()
-    M.Neogrep:grep_current_buffer()
-  end, {})
-  vim.api.nvim_create_user_command("NeogrepWordInBuffer", function()
-    M.Neogrep:grep_word_in_current_buffer()
-  end, {})
+  vim.api.nvim_create_user_command("Neogrep", function() self:run() end, {})
+  vim.api.nvim_create_user_command("NeogrepWord", function() M.Neogrep:grep_under_cursor() end, {})
+  vim.api.nvim_create_user_command("NeogrepBuffer", function() M.Neogrep:grep_current_buffer() end, {})
+  vim.api.nvim_create_user_command("NeogrepWordInBuffer", function() M.Neogrep:grep_word_in_current_buffer() end, {})
 
   --TODO: Move me out to NeoAwk module
   vim.api.nvim_create_user_command("FilterBuffer", function()
