@@ -24,14 +24,18 @@ function M.Neogithub:init()
   debuggable(self, { self.split1 })
   highlightable(self, self.split1, "Character")
 
+  self:init_mappings()
+
+  self.split1:on("CursorMoved", function() self:print(self:get_line()) end)
+end
+
+function M.Neogithub:init_mappings()
   map(self, self.split1, {
     { "n", "p", function() self:pull() end, "Pull repositories" },
     { "n", "n", function() self:create() end, "Create a new repository" },
     { "n", "d", function() self:delete() end, "Delete a repository" },
     { { "n", "i" }, "r", function() self:refresh() end, "Refresh repositories" },
   })
-
-  self.split1:on("CursorMoved", function() self:print(self:get_line()) end)
 end
 
 function M.Neogithub:pull()

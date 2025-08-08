@@ -53,7 +53,6 @@ return function(self, buf, mappings)
   -- Register the provided mappings
   for _, m in ipairs(mappings) do
     local mode, key, fn = m[1], m[2], m[3]
-    self:print("Registering mapping:", mode, key, fn)
     -- Ensure mode is a table for multiple modes
     if type(mode) ~= "table" then
       mode = { mode }

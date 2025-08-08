@@ -26,8 +26,6 @@ function M.Neopostman:init()
 
   vim.api.nvim_buf_set_option(self.split2.bufnr, "filetype", "json")
 
-  self:init_mappings()
-
   --Traits
   toggleable(self, { self.split1, self.split2, self.jqsplit })
   debuggable(self, { self.split1, self.split2, self.jqsplit })
@@ -37,29 +35,27 @@ function M.Neopostman:init()
 
   insertable(self, self.jqsplit)
   completable(self.split2, self.jqsplit)
-  help(self, { self.split1, self.split2, self.jqsplit }, {
-    "p: Toggle Neopostman",
-    "r: Rerun last command",
-    "e: Edit current script",
-    "Enter: Run current script",
-    "jq: Enter jq command in bottom split",
-  })
+
+  self:init_mappings()
 end
 
 function M.Neopostman:init_mappings()
-  ---Split 1
-  self.split1:map("n", "<C-p>", function() self:toggle() end, {})
-  self.split1:map("n", "<cr>", function() self:run_current() end, {})
-  self.split1:map("n", "r", function() self:rerun() end, {})
-  self.split1:map("n", "e", function() self:edit_file() end, {})
+    help(self, self.split1, {
+      { "n", "<C-p>", function() self:toggle() end, "Toggle Neopostman" },
+      { "n", "<cr>",  function() self:run_current() end, "Run current script" },
+      { "n", "r",     function() self:rerun() end, "Rerun last command" },
+      { "n", "e",     function() self:edit_file() end, "Edit current script" },
+    })
 
-  ---Split 2
-  self.split2:map("n", "r", function() self:rerun() end, {})
-  self.split2:map("n", "<cr>", function() self:rerun() end, {})
+    help(self, self.split2, {
+      { "n", "r",     function() self:rerun() end, "Rerun last command" },
+      { "n", "<cr>",  function() self:rerun() end, "Rerun last command" },
+    })
 
-  ---Jq 2
-  self.jqsplit:map("n", "<cr>", function() self:jq_exec() end, {})
-  self.jqsplit:map("i", "<cr>", function() self:jq_exec() end, {})
+    help(self, self.jqsplit, {
+      { "n", "<cr>",  function() self:jq_exec() end, "Run jq command" },
+      { "i", "<cr>",  function() self:jq_exec() end, "Run jq command" },
+    })
 end
 
 function M.Neopostman:run()
