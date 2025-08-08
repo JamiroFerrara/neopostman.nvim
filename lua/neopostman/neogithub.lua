@@ -18,15 +18,21 @@ function M.Neogithub:init()
 
   self.is_open = false
   self.split1 = Split({ position = "right", size = "50%", enter = false })
+  self.preview_split = Split({ position = "right", size = "50%", enter = false })
 
-  --Traits
-  toggleable(self, { self.split1 })
-  debuggable(self, { self.split1 })
+  -- Traits
+  toggleable(self, { self.split1, self.preview_split })
+  debuggable(self, { self.split1, self.preview_split })
   highlightable(self, self.split1, "Character")
 
   self:init_mappings()
 
-  self.split1:on("CursorMoved", function() self:print(self:get_line()) end)
+  self.split1:on("CursorMoved", function()
+    local repo = self:get_repo_line()
+    if repo and repo ~= "" then
+      self:show_readme_preview(repo)
+    end
+  end)
 end
 
 function M.Neogithub:init_mappings()
@@ -34,8 +40,41 @@ function M.Neogithub:init_mappings()
     { "n", "p", function() self:pull() end, "Pull repositories" },
     { "n", "n", function() self:create() end, "Create a new repository" },
     { "n", "d", function() self:delete() end, "Delete a repository" },
-    { { "n", "i" }, "r", function() self:refresh() end, "Refresh repositories" },
+    { "n", "r", function() self:refresh() end, "Refresh repositories" },
   })
+end
+
+function M.Neogithub:show_readme_preview(repo)
+  U.put_text(self.preview_split.bufnr, "")
+  S.Spinner:show_loading("Fetching README...")
+
+  -- Get repo HTTPS URL
+  U.run("gh repo view " .. repo .. " --json url -q .url", function(url)
+    if not url or url == "" then
+      U.put_text(self.preview_split.bufnr, { "No README found." })
+      S.Spinner:hide_loading()
+      return
+    end
+
+    -- Convert repo URL to raw README URL
+    -- Example: https://github.com/user/repo -> https://raw.githubusercontent.com/user/repo/HEAD/README.md
+    local raw_url = url:gsub("https://github.com/", "https://raw.githubusercontent.com/") .. "/HEAD/README.md"
+
+    -- Curl README content
+    U.run("curl -s " .. raw_url, function(res)
+      if res and res ~= "" then
+        local lines = {}
+        for line in res:gmatch("[^\r\n]+") do
+          table.insert(lines, line)
+        end
+        U.put_text(self.preview_split.bufnr, lines)
+        vim.bo[self.preview_split.bufnr].filetype = "markdown"
+      else
+        U.put_text(self.preview_split.bufnr, { "No README.md found in default branch." })
+      end
+      S.Spinner:hide_loading()
+    end)
+  end)
 end
 
 function M.Neogithub:pull()
@@ -58,6 +97,7 @@ function M.Neogithub:pull()
 end
 
 function M.Neogithub:create()
+  self.preview_split:hide()
   U.put_text(self.split1.bufnr, { "public", "private" })
   self.split1:map("n", "<cr>", function()
     U.put_text(self.split1.bufnr, "")
