@@ -14,9 +14,7 @@ local help = require("neopostman.traits.help")
 M.Neogithub = {}
 
 function M.Neogithub:init()
-  vim.api.nvim_create_user_command("Neogithub", function()
-    self:run()
-  end, {})
+  vim.api.nvim_create_user_command("Neogithub", function() self:run() end, {})
 
   self.is_open = false
   self.split1 = Split({ position = "right", size = "50%", enter = false })
@@ -38,6 +36,7 @@ end
 
 function M.Neogithub:init_mappings()
   self.split1:map("n", "p", function() self:pull() end, {})
+  self.split1:map("n", "r", function() self:refresh() end, {})
   self.split1:map("n", "n", function() self:create() end, {})
   self.split1:map("n", "d", function() self:delete() end, {})
 end
@@ -80,25 +79,34 @@ function M.Neogithub:create_repo(name)
 end
 
 function M.Neogithub:delete()
+  S.Spinner:show_loading("Deleting repository..")
   local line = self:get_repo_line()
-  self:delete_repo(line)
-end
-
-function M.Neogithub:delete_repo(name)
-  U.run("gh repo delete --yes " .. name, function()
-    self:toggle()
+  U.run("gh repo delete --yes " .. line, function()
+    self:refresh()
   end)
 end
 
 function M.Neogithub:run()
-  self:toggle()
+  self:open()
   U.put_text(self.split1.bufnr, "")
   S.Spinner:show_loading("Loading..")
 
   U.run("gh repo list", function(res)
-    U.put_text(self.split1.bufnr, res)
+    local stripped = {}
+    for line in res:gmatch("[^\r\n]+") do
+      local repo = line:match("^(%S+)")
+      if repo then
+        table.insert(stripped, repo)
+      end
+    end
+    U.put_text(self.split1.bufnr, stripped)
     S.Spinner:hide_loading()
   end)
+end
+
+function M.Neogithub:refresh()
+  S.Spinner:show_loading("Refreshing..")
+  self:run()
 end
 
 function M.Neogithub:get_line()
