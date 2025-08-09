@@ -33,7 +33,7 @@ function M.Neopostman:init()
   highlightable(self, self.split1, "Character")
   highlightable(self, self.split2, "Error")
 
-  insertable(self, self.jqsplit)
+  -- insertable(self, self.jqsplit)
   completable(self.split2, self.jqsplit)
 
   self:init_mappings()
