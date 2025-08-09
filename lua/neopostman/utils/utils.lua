@@ -13,6 +13,22 @@ function M.put_text(bufnr, text)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 end
 
+M.remove_line = function(buffer, linenr)
+  -- Remove a line from the buffer
+  -- linenr is 1-based index
+  if not vim.api.nvim_buf_is_valid(buffer) then
+    return
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
+  if linenr < 1 or linenr > #lines then
+    return -- Invalid line number
+  end
+
+  table.remove(lines, linenr) -- Remove the specified line
+  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+end
+
 M.append_text = function(buffer, text)
   local current_lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
   local new_lines = vim.split(text, "\n")
@@ -195,6 +211,17 @@ function M.read_json_file(filepath)
   end
 
   return result
+end
+
+--- FIX: Not working
+function M.replace_window(buf1, buf2)
+  -- Replace the buf1 window with buf2
+  local win_id = M.get_win_id_from_buf(buf1)
+  if not win_id or not vim.api.nvim_win_is_valid(win_id) then
+    return
+  end
+  -- Put buf2 in the same window as buf1
+  vim.api.nvim_win_set_buf(win_id, buf2)
 end
 
 return M
