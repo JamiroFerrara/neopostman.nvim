@@ -11,9 +11,9 @@ local help = require("neopostman.traits.help")
 local toggleable = require("neopostman.traits.toggleable")
 local debuggable = require("neopostman.traits.debuggable")
 
-M.Neofications = {}
+M.NeoMessage = {}
 
-function M.Neofications:init()
+function M.NeoMessage:init()
   vim.api.nvim_create_user_command("NeoNotifications", function() self:run() end, {})
 
   self.split = Split({ position = "bottom", size = "20%", enter = true })
@@ -36,13 +36,13 @@ function M.Neofications:init()
   self:init_mappings()
 end
 
-function M.Neofications:init_mappings()
+function M.NeoMessage:init_mappings()
   help(self, self.split, {
     { "n", "<CR>", function() self:preview_message() end, "View Full Message", },
   })
 end
 
-function M.Neofications:preview_message()
+function M.NeoMessage:preview_message()
   self._toggleable_prev_buf = vim.api.nvim_get_current_buf()
 
   local line = vim.api.nvim_get_current_line()
@@ -57,7 +57,7 @@ function M.Neofications:preview_message()
   U.put_text(self.preview.bufnr, notification.msg)
 end
 
-function M.Neofications:run()
+function M.NeoMessage:run()
   self:toggle_init()
   self.split:show()
 
@@ -69,7 +69,7 @@ function M.Neofications:run()
   U.remove_line(self.split.bufnr, 1)
 end
 
-function M.Neofications:get_notification(id)
+function M.NeoMessage:get_notification(id)
   local notifications = Snacks.notifier.get_history()
   for _, notification in ipairs(notifications) do
     if notification.id == tonumber(id) then
