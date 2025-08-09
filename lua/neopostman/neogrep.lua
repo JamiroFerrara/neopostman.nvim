@@ -1,3 +1,10 @@
+--TOOO:
+-- Add a spinner while running the command
+-- Split panes
+-- Global grep (home)
+-- Fuzzy search?
+-- Enable / Disable Preview with config file
+-- Hidden files
 local M = {}
 
 local Split = require("nui.split")
@@ -54,7 +61,7 @@ function M.Neogrep:run()
   self:open()
 
   local res = vim.fn.input("Grep: ")
-  local content = U.run("rg --vimgrep --ignore-file-case-insensitive --hidden " .. res)
+  local content = U.run("rg --vimgrep -i " .. vim.fn.shellescape(res))
   U.put_text(self.split1.bufnr, content)
 
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
@@ -171,7 +178,7 @@ function M.Neogrep:grep_under_cursor()
   self:open()
 
   -- Run ripgrep with the word under the cursor
-  local content = U.run("rg --vimgrep " .. word)
+  local content = U.run("rg --vimgrep " .. vim.fn.shellescape(word))
   U.put_text(self.split1.bufnr, content)
   self.last_cursor_line = nil -- reset so open_file will run
   self:open_file()
@@ -228,7 +235,7 @@ function M.Neogrep:grep_word_in_current_buffer()
   self:open()
 
   -- Run ripgrep for the word under the cursor within the current file
-  local content = U.run("rg --vimgrep " .. vim.fn.shellescape(word) .. " " .. vim.fn.shellescape(filepath))
+  local content = U.run("rg --vimgrep -i " .. vim.fn.shellescape(word) .. " " .. vim.fn.shellescape(filepath))
   U.put_text(self.split1.bufnr, content)
 
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })

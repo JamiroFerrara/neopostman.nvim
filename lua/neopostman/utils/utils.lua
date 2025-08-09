@@ -2,18 +2,15 @@ local M = {}
 
 local Job = require("plenary.job")
 
-M.put_text = function(buffer, text)
-  local lines = {}
+function M.put_text(bufnr, text)
+  local lines = vim.split(text, "\n", { plain = true })
 
-  if type(text) == "string" then
-    lines = vim.split(text, "\n", { plain = true })
-  elseif type(text) == "table" then
-    lines = text
-  else
-    error("Invalid type for text: expected string or table")
+  -- Remove last line if it's empty
+  if lines[#lines] == "" then
+    table.remove(lines, #lines)
   end
 
-  vim.api.nvim_buf_set_lines(buffer, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
 end
 
 M.append_text = function(buffer, text)
