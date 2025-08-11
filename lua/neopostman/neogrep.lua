@@ -35,7 +35,7 @@ function M.Neogrep:init()
 
   self.split1:on("CursorMoved", function()
     U.highlight_current_line(self.split1.bufnr, "Error", self._active_ns, ":", 3)
-    self:open_file()
+    self:goto_file()
   end)
 
   self.split1:on("WinClosed", function()
@@ -57,7 +57,7 @@ end
 
 function M.Neogrep:init_mappings()
   help(self, self.split1, {
-    { "n", "<cr>", function() self:confirm_open_file() end, "Open file under cursor" },
+    { "n", "<cr>", function() self:open_file() end, "Open file under cursor" },
     { "n", "<M-n>", function() U:next() end, "Next result" },
     { "n", "<C-n>", function() U:next() end, "Next result" },
   })
@@ -72,6 +72,20 @@ function M.Neogrep:run()
 
   U.put_text(self.split1.bufnr, self:grep(vim.fn.input("Grep: ")))
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+end
+
+function M.Neogrep:grep_under_cursor()
+  -- Get the word under the cursor in the current window
+  local word = vim.fn.expand("<cword>")
+
+  -- Save origin buffer and window
+  self.origin_bufnr = vim.api.nvim_get_current_buf()
+  self.origin_winid = vim.api.nvim_get_current_win()
+
+  self:open()
+
+  U.put_text(self.split1.bufnr, self:grep(word))
+  self:goto_file()
 end
 
 function M.Neogrep:parse_grep()
@@ -93,20 +107,16 @@ function M.Neogrep:parse_grep()
   }
 end
 
-function M.Neogrep:open_file()
+function M.Neogrep:goto_file()
   local parsed = self:parse_grep()
-
-  -- Save origin buffer if modified
-  if vim.api.nvim_buf_get_option(self.origin_bufnr, "modifiable") and vim.api.nvim_buf_get_option(self.origin_bufnr, "modified") then
-    vim.api.nvim_buf_call(self.origin_bufnr, function()
-      vim.cmd("write")
-    end)
+  if parsed == nil then
+    return
   end
 
   local current_win = vim.api.nvim_get_current_win()
 
   vim.api.nvim_set_current_win(self.origin_winid)
-  vim.cmd("edit " .. vim.fn.fnameescape(parsed.file))
+  vim.cmd("keepjumps edit " .. vim.fn.fnameescape(parsed.file))
   vim.cmd("filetype detect")
 
   self.preview_bufnr = vim.api.nvim_get_current_buf()
@@ -119,37 +129,13 @@ function M.Neogrep:open_file()
   vim.api.nvim_set_current_win(current_win)
 end
 
-function M.Neogrep:confirm_open_file()
-  -- Hide the split
-  self.split1:hide()
-
+function M.Neogrep:open_file()
   local parsed = self:parse_grep()
 
-  -- Save origin buffer if modified
-  if vim.api.nvim_buf_get_option(self.origin_bufnr, "modifiable") and vim.api.nvim_buf_get_option(self.origin_bufnr, "modified") then
-    vim.api.nvim_buf_call(self.origin_bufnr, function()
-      vim.cmd("write")
-    end)
-  end
-
+  self.split1:hide()
   vim.api.nvim_set_current_win(self.origin_winid)
-
-  vim.cmd("filetype detect")
   vim.api.nvim_win_set_cursor(0, { parsed.lnum, parsed.col - 1 })
-end
-
-function M.Neogrep:grep_under_cursor()
-  -- Get the word under the cursor in the current window
-  local word = vim.fn.expand("<cword>")
-
-  -- Save origin buffer and window
-  self.origin_bufnr = vim.api.nvim_get_current_buf()
-  self.origin_winid = vim.api.nvim_get_current_win()
-
-  self:open()
-
-  U.put_text(self.split1.bufnr, self:grep(word))
-  self:open_file()
+  vim.cmd("filetype detect")
 end
 
 function M.Neogrep:grep(word)
