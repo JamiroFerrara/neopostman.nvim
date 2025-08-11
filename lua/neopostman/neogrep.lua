@@ -150,7 +150,9 @@ function M.Neogrep:grep(word, file)
   table.remove(lines) --Remove last line
   for _, r in ipairs(lines) do
     local split_line = U.split(r, ":")
-    table.insert(rows, Row:new(split_line[1], tonumber(split_line[2]), tonumber(split_line[3]), split_line[4]));
+    -- Split up to the 4th colon
+    local text = table.concat(split_line, ":", 4)
+    table.insert(rows, Row:new(split_line[1], tonumber(split_line[2]), tonumber(split_line[3]), text));
   end
   return rows
 end
