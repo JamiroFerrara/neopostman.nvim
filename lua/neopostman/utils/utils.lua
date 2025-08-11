@@ -3,10 +3,18 @@ local M = {}
 local Job = require("plenary.job")
 
 function M.put_text(bufnr, text)
-  local lines = vim.split(text, "\n", { plain = true })
+  local lines
+
+  if type(text) == "table" then
+    lines = text
+  elseif type(text) == "string" then
+    lines = vim.split(text, "\n", { plain = true })
+  else
+    error("put_text: expected string or table, got " .. type(text))
+  end
 
   -- Remove last line if it's empty
-  if lines[#lines] == "" then
+  if #lines > 0 and lines[#lines] == "" then
     table.remove(lines, #lines)
   end
 
@@ -222,6 +230,17 @@ function M.replace_window(buf1, buf2)
   end
   -- Put buf2 in the same window as buf1
   vim.api.nvim_win_set_buf(win_id, buf2)
+end
+
+--- Go down one with cursor
+function M:next()
+  local cursor_line = vim.api.nvim_win_get_cursor(self.split1.winid)[1]
+  local total_lines = vim.api.nvim_buf_line_count(self.split1.bufnr)
+  if cursor_line < total_lines then
+    vim.api.nvim_win_set_cursor(self.split1.winid, { cursor_line + 1, 0 })
+  else
+    vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 0 }) -- Wrap around to the first line
+  end
 end
 
 return M
