@@ -80,6 +80,7 @@ function M.Neomake:run()
   })
 end
 
+--TODO: 
 function M.Neomake:launched_with_terminal()
   local argv = vim.v.argv or {}
   for _, arg in ipairs(argv) do

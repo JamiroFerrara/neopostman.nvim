@@ -8,6 +8,7 @@ local U = require("neopostman.utils.utils")
 local S = require("neopostman.components.spinner")
 local A = require("neopostman.neoawk").NeoAwk
 local Row = require("neopostman.types.row");
+local NeoMake = require("neopostman.neomake").NeoMake;
 
 ---@diagnostic disable: undefined-field
 local help = require("neopostman.traits.help")
@@ -22,6 +23,8 @@ function M.Neogrep:init()
   vim.api.nvim_create_user_command("NeogrepToggle", function() self:toggle() end, {})
   vim.api.nvim_create_user_command("NeogrepWord", function() M.Neogrep:grep_under_cursor() end, {})
   vim.api.nvim_create_user_command("NeogrepBuffer", function() M.Neogrep:grep_buffer() end, {})
+  vim.api.nvim_create_user_command("TmuxSessions", function() M.Neogrep:tmux_sessions() end, {})
+  vim.api.nvim_create_user_command("NeoMake", function() M.Neogrep:run_make() end, {})
 
   self._highlight_ns = vim.api.nvim_create_namespace("NeogrepPreviewHighlight")
 
@@ -34,7 +37,10 @@ function M.Neogrep:init()
 
   self.split1:on("CursorMoved", function()
     U.highlight_current_line(self.split1.bufnr, "Error", self._active_ns, ":", 3)
-    self:goto_file()
+
+    if self.mode == "grep" then
+      self:goto_file()
+    end
   end)
 
   self.split1:on("WinClosed", function()
@@ -61,6 +67,7 @@ function M.Neogrep:init_mappings()
     { "n", "<C-n>", function() U:next() end, "Next result" },
     { "n", "<leader>fw", function() self:run(false) end, "Next result" },
     { "n", "s", function() self:run(false) end, "Next result" },
+    { "n", "<C-d>", function() A.filter_buffer_lines_with_awk(vim.api.nvim_get_current_buf(), vim.fn.input("Find lines: ")) end, "Next result" },
   })
 end
 
@@ -71,6 +78,7 @@ function M.Neogrep:save_origin()
 end
 
 function M.Neogrep:run(save_origin)
+  M.Neogrep.mode = "grep";
   if save_origin then
     self:save_origin()
   end
@@ -86,6 +94,7 @@ function M.Neogrep:run(save_origin)
 end
 
 function M.Neogrep:grep_under_cursor()
+  M.Neogrep.mode = "grep";
   -- Get the word under the cursor in the current window
   local word = vim.fn.expand("<cword>")
   self:save_origin()
@@ -95,6 +104,35 @@ function M.Neogrep:grep_under_cursor()
   U.put_text(self.split1.bufnr, Row:array_to_string(self.results))
   self:highlight_matches(word)
   self:goto_file()
+end
+
+function M.Neogrep:get_tmux_sessions()
+  M.Neogrep.mode = "tmux";
+  local sessions = U.run("tmux list-sessions -F '#{session_name}'")
+  local session_list = U.split(sessions, "\n")
+
+  local session_rows = {}
+  for _, session in ipairs(session_list) do
+    if session ~= "" then
+      table.insert(session_rows, Row:new(session, 0, 0, ""))
+    end
+  end
+
+  return session_rows
+end
+
+function M.Neogrep:tmux_sessions()
+  self:save_origin()
+  self:open()
+
+  self.results = self:get_tmux_sessions()
+
+  local string_res = Row:array_to_string(self.results)
+  U.put_text(self.split1.bufnr, string_res)
+
+  -- Highlight the first session
+  vim.api.nvim_buf_add_highlight(self.split1.bufnr, self._highlight_ns, "Error", 0, 0, -1)
+  vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 0 })
 end
 
 function M.Neogrep:grep_buffer()
@@ -133,14 +171,28 @@ function M.Neogrep:goto_file()
 end
 
 function M.Neogrep:open_file()
-  local parsed = Row:get_from_current_lnum(self.results)
+  if self.mode == "make" then
+    --TODO:
+  end
 
-  self.split1:hide()
-  vim.api.nvim_buf_clear_namespace(self.preview_bufnr, self._highlight_ns, 0, -1)
+  if self.mode == "tmux" then
+    --- Go to tmux session
+    local parsed = Row:get_from_current_lnum(self.results)
+    self.split1:hide()
+    vim.api.nvim_set_current_win(self.origin_winid)
+    U.run("tmux switch-client -t " .. vim.fn.shellescape(parsed.file))
+  end
 
-  vim.api.nvim_set_current_win(self.origin_winid)
-  vim.api.nvim_win_set_cursor(0, { parsed.lnum, parsed.col - 1 })
-  vim.cmd("filetype detect")
+  if self.mode == "grep" then 
+    local parsed = Row:get_from_current_lnum(self.results)
+
+    self.split1:hide()
+    vim.api.nvim_buf_clear_namespace(self.preview_bufnr, self._highlight_ns, 0, -1)
+
+    vim.api.nvim_set_current_win(self.origin_winid)
+    vim.api.nvim_win_set_cursor(0, { parsed.lnum, parsed.col - 1 })
+    vim.cmd("filetype detect")
+  end
 end
 
 function M.Neogrep:highlight_matches(word)
