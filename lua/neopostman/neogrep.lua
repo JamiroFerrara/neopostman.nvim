@@ -11,6 +11,7 @@ local Split = require("nui.split")
 local U = require("neopostman.utils.utils")
 local S = require("neopostman.components.spinner")
 local A = require("neopostman.neoawk").NeoAwk
+local Row = require("neopostman.types.row");
 
 ---@diagnostic disable: undefined-field
 local help = require("neopostman.traits.help")
@@ -60,59 +61,39 @@ function M.Neogrep:init_mappings()
     { "n", "<cr>", function() self:open_file() end, "Open file under cursor" },
     { "n", "<M-n>", function() U:next() end, "Next result" },
     { "n", "<C-n>", function() U:next() end, "Next result" },
+    { "n", "<leader>fw", function() U:run() end, "Next result" },
   })
 end
 
-function M.Neogrep:run()
+function M.Neogrep:save_origin()
   -- Save origin buffer and window
   self.origin_bufnr = vim.api.nvim_get_current_buf()
   self.origin_winid = vim.api.nvim_get_current_win()
+end
 
+function M.Neogrep:run()
+  self:save_origin()
   self:open()
 
-  U.put_text(self.split1.bufnr, self:grep(vim.fn.input("Grep: ")))
+  self.results = self:grep(vim.fn.input("Grep: "));
+  local string_res = Row:array_to_string(self.results);
+  U.put_text(self.split1.bufnr, string_res)
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
 end
 
 function M.Neogrep:grep_under_cursor()
   -- Get the word under the cursor in the current window
   local word = vim.fn.expand("<cword>")
-
-  -- Save origin buffer and window
-  self.origin_bufnr = vim.api.nvim_get_current_buf()
-  self.origin_winid = vim.api.nvim_get_current_win()
-
+  self:save_origin()
   self:open()
 
-  U.put_text(self.split1.bufnr, self:grep(word))
+  self.results = self:grep(word);
+  U.put_text(self.split1.bufnr, Row:array_to_string(self.results))
   self:goto_file()
 end
 
-function M.Neogrep:parse_grep()
-  local cursor_line = vim.api.nvim_win_get_cursor(self.split1.winid)[1]
-
-  local line = vim.api.nvim_buf_get_lines(self.split1.bufnr, cursor_line - 1, cursor_line, false)[1]
-  local file, lnum, col = line:match("^(.-):(%d+):(%d+):")
-  if not file then
-    return
-  end
-
-  lnum = tonumber(lnum)
-  col = tonumber(col)
-
-  return {
-    file = file,
-    lnum = lnum,
-    col = col
-  }
-end
-
 function M.Neogrep:goto_file()
-  local parsed = self:parse_grep()
-  if parsed == nil then
-    return
-  end
-
+  local parsed = Row:get_from_current_lnum(self.results)
   local current_win = vim.api.nvim_get_current_win()
 
   vim.api.nvim_set_current_win(self.origin_winid)
@@ -130,17 +111,27 @@ function M.Neogrep:goto_file()
 end
 
 function M.Neogrep:open_file()
-  local parsed = self:parse_grep()
+  local parsed = Row:get_from_current_lnum(self.results)
 
   self.split1:hide()
+  vim.api.nvim_buf_clear_namespace(self.preview_bufnr, self._highlight_ns, 0, -1)
+
   vim.api.nvim_set_current_win(self.origin_winid)
   vim.api.nvim_win_set_cursor(0, { parsed.lnum, parsed.col - 1 })
   vim.cmd("filetype detect")
 end
 
+---@return Row[]
 function M.Neogrep:grep(word)
-  local content = U.run("rg --vimgrep " .. vim.fn.shellescape(word))
-  return content
+  local rows = {}
+  local res = U.run("rg --vimgrep " .. vim.fn.shellescape(word))
+  local lines = U.split(res, "\n")
+  table.remove(lines)
+  for _, r in ipairs(lines) do
+    local split_line = U.split(r, ":")
+    table.insert(rows, Row:new(split_line[1], tonumber(split_line[2]), tonumber(split_line[3]), split_line[4]));
+  end
+  return rows
 end
 
 return M
