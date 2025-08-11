@@ -17,16 +17,20 @@ end
 
 ---@param row Row
 ---@return string
-function M:to_string(row)
-    return string.format("%s:%d:%d: %s", row.file, row.lnum, row.col, row.text)
+function M:to_string(row, lines_only)
+  if lines_only then
+    return row.text
+  end
+
+  return string.format("%s:%d:%d: %s", row.file, row.lnum, row.col, row.text)
 end
 
 ---@param rows Row[]
 ---@return string
-function M:array_to_string(rows)
+function M:array_to_string(rows, lines_only)
   local lines = "";
   for _, row in ipairs(rows) do
-    local line = self:to_string(row)
+    local line = self:to_string(row, lines_only)
     lines = lines .. line .. "\n"
   end
   return lines;

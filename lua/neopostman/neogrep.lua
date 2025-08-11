@@ -8,7 +8,7 @@ local U = require("neopostman.utils.utils")
 local S = require("neopostman.components.spinner")
 local A = require("neopostman.neoawk").NeoAwk
 local Row = require("neopostman.types.row");
-local NeoMake = require("neopostman.neomake").NeoMake;
+local NeoMake = require("neopostman.neomake").Neomake;
 
 ---@diagnostic disable: undefined-field
 local help = require("neopostman.traits.help")
@@ -93,6 +93,28 @@ function M.Neogrep:run(save_origin)
   self:highlight_matches(word)
 end
 
+function M.Neogrep:run_make()
+  self.mode = "make"
+  self:save_origin()
+  self:open()
+
+  local rows = {}
+  local makefile = NeoMake:parse_make_headers()
+  for _, cmd in ipairs(makefile) do
+    table.insert(rows, Row:new("", 0, 0, cmd))
+  end
+
+  local launched_from_term = NeoMake:launched_with_terminal()
+  if launched_from_term then
+    vim.api.nvim_set_current_buf(self.split1.bufnr)
+  end
+
+  self.results = rows
+  local content = Row:array_to_string(rows, true)
+  U.put_text(self.split1.bufnr, content)
+  vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+end
+
 function M.Neogrep:grep_under_cursor()
   M.Neogrep.mode = "grep";
   -- Get the word under the cursor in the current window
@@ -172,7 +194,16 @@ end
 
 function M.Neogrep:open_file()
   if self.mode == "make" then
-    --TODO:
+    --- Go to tmux session
+    local parsed = Row:get_from_current_lnum(self.results)
+    self.split1:hide()
+
+    local launched_from_term = NeoMake:launched_with_terminal()
+    if launched_from_term then
+      NeoMake:run_in_nvim_terminal("make " .. parsed.text)
+    else
+      NeoMake:run_in_tmux("make " .. parsed.text)
+    end
   end
 
   if self.mode == "tmux" then
