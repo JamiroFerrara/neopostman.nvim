@@ -24,6 +24,7 @@ M.Neogrep = {}
 function M.Neogrep:init()
   vim.api.nvim_create_user_command("Neogrep", function() self:run() end, {})
   vim.api.nvim_create_user_command("NeogrepWord", function() M.Neogrep:grep_under_cursor() end, {})
+  vim.api.nvim_create_user_command("NeogrepBuffer", function() M.Neogrep:grep_buffer() end, {})
 
   self._highlight_ns = vim.api.nvim_create_namespace("NeogrepPreviewHighlight")
 
@@ -92,8 +93,23 @@ function M.Neogrep:grep_under_cursor()
   self:goto_file()
 end
 
+function M.Neogrep:grep_buffer()
+  local path = vim.fn.expand("%:p")
+  print(path)
+
+  self:save_origin()
+  self:open()
+
+  self.results = self:grep(vim.fn.input("Grep: "), path);
+  local string_res = Row:array_to_string(self.results);
+  U.put_text(self.split1.bufnr, string_res)
+  vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+end
+
 function M.Neogrep:goto_file()
   local parsed = Row:get_from_current_lnum(self.results)
+  if parsed == nil then return end
+
   local current_win = vim.api.nvim_get_current_win()
 
   vim.api.nvim_set_current_win(self.origin_winid)
@@ -122,11 +138,20 @@ function M.Neogrep:open_file()
 end
 
 ---@return Row[]
-function M.Neogrep:grep(word)
+---@param word string
+---@param file? string
+function M.Neogrep:grep(word, file)
   local rows = {}
-  local res = U.run("rg --vimgrep " .. vim.fn.shellescape(word))
+
+  local res = "";
+  if file == nil then
+    res = U.run("rg --vimgrep " .. vim.fn.shellescape(word))
+  else
+    res = U.run("rg --vimgrep " .. vim.fn.shellescape(word) .. " " .. vim.fn.shellescape(file))
+  end
+
   local lines = U.split(res, "\n")
-  table.remove(lines)
+  table.remove(lines) --Remove last line
   for _, r in ipairs(lines) do
     local split_line = U.split(r, ":")
     table.insert(rows, Row:new(split_line[1], tonumber(split_line[2]), tonumber(split_line[3]), split_line[4]));
