@@ -1,9 +1,5 @@
 --TOOO:
--- Add a spinner while running the command
 -- Split panes
--- Global grep (home)
--- Fuzzy search?
--- Enable / Disable Preview with config file
 -- Hidden files
 local M = {}
 
