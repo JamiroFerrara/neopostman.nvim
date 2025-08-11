@@ -18,7 +18,8 @@ local debuggable = require("neopostman.traits.debuggable")
 M.Neogrep = {}
 
 function M.Neogrep:init()
-  vim.api.nvim_create_user_command("Neogrep", function() self:run() end, {})
+  vim.api.nvim_create_user_command("Neogrep", function() self:run(true) end, {})
+  vim.api.nvim_create_user_command("NeogrepToggle", function() self:toggle() end, {})
   vim.api.nvim_create_user_command("NeogrepWord", function() M.Neogrep:grep_under_cursor() end, {})
   vim.api.nvim_create_user_command("NeogrepBuffer", function() M.Neogrep:grep_buffer() end, {})
 
@@ -58,7 +59,8 @@ function M.Neogrep:init_mappings()
     { "n", "<cr>", function() self:open_file() end, "Open file under cursor" },
     { "n", "<M-n>", function() U:next() end, "Next result" },
     { "n", "<C-n>", function() U:next() end, "Next result" },
-    { "n", "<leader>fw", function() U:run() end, "Next result" },
+    { "n", "<leader>fw", function() self:run(false) end, "Next result" },
+    { "n", "s", function() self:run(false) end, "Next result" },
   })
 end
 
@@ -68,8 +70,11 @@ function M.Neogrep:save_origin()
   self.origin_winid = vim.api.nvim_get_current_win()
 end
 
-function M.Neogrep:run()
-  self:save_origin()
+function M.Neogrep:run(save_origin)
+  if save_origin then
+    self:save_origin()
+  end
+
   self:open()
 
   local word = vim.fn.input("Grep: ")
