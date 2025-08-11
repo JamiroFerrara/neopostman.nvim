@@ -72,10 +72,12 @@ function M.Neogrep:run()
   self:save_origin()
   self:open()
 
-  self.results = self:grep(vim.fn.input("Grep: "));
+  local word = vim.fn.input("Grep: ")
+  self.results = self:grep(word);
   local string_res = Row:array_to_string(self.results);
   U.put_text(self.split1.bufnr, string_res)
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
+  self:highlight_matches(word)
 end
 
 function M.Neogrep:grep_under_cursor()
@@ -86,6 +88,7 @@ function M.Neogrep:grep_under_cursor()
 
   self.results = self:grep(word);
   U.put_text(self.split1.bufnr, Row:array_to_string(self.results))
+  self:highlight_matches(word)
   self:goto_file()
 end
 
@@ -96,9 +99,11 @@ function M.Neogrep:grep_buffer()
   self:save_origin()
   self:open()
 
-  self.results = self:grep(vim.fn.input("Grep: "), path);
+  local word =vim.fn.input("Grep: ");
+  self.results = self:grep(word, path);
   local string_res = Row:array_to_string(self.results);
   U.put_text(self.split1.bufnr, string_res)
+  self:highlight_matches(word)
   vim.api.nvim_win_set_cursor(self.split1.winid, { 1, 1 })
 end
 
@@ -131,6 +136,22 @@ function M.Neogrep:open_file()
   vim.api.nvim_set_current_win(self.origin_winid)
   vim.api.nvim_win_set_cursor(0, { parsed.lnum, parsed.col - 1 })
   vim.cmd("filetype detect")
+end
+
+function M.Neogrep:highlight_matches(word)
+  local bufnr = self.split1.bufnr
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local hl_group = "Error" -- You can define your own if needed
+
+  for i, line in ipairs(lines) do
+    local start = 1
+    while true do
+      local s, e = string.find(line, word, start)
+      if not s then break end
+      vim.api.nvim_buf_add_highlight(bufnr, self._highlight_ns, hl_group, i - 1, s - 1, e)
+      start = e + 1
+    end
+  end
 end
 
 ---@return Row[]
