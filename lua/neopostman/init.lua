@@ -5,6 +5,7 @@ local P = require("neopostman.neopostman")
 local M = require("neopostman.neomake")
 local NG = require("neopostman.neogrep")
 local NM = require("neopostman.neomessage")
+local CN = require("neopostman.neonetwork")
 
 M.setup = function(config)
 	NM.NeoMessage:init()
@@ -12,6 +13,7 @@ M.setup = function(config)
 	P.Neopostman:init()
 	M.Neomake:init()
 	NG.Neogrep:init()
+	CN.ChromeNetwork:init()
 end
 
 return M
