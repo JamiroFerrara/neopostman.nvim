@@ -1,3 +1,6 @@
+> [!TODO] ChromeNetwork
+- [ ] When calls fail they should be colored red in the terminal
+
 > [!TODO] 
 - Neomenu
     - A menu system inpired by Oil.nvim with the goal to be able to do most

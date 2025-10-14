@@ -58,18 +58,19 @@ function M.ChromeNetwork:init_mappings()
   help(self, self.jqsplit, {
     { "n", "<cr>", function() self:jq_exec() end, "Run jq command" },
     { "i", "<cr>", function() self:jq_exec() end, "Run jq command" },
+    { "n", "<C-u>", function() self:jq_reset() end, "Reset jq output to original JSON" },
   })
 end
 
 function M.ChromeNetwork:run()
   self:start_interceptor()
-  -- self:open_debug()
   self:toggle()
 end
 
 function M.ChromeNetwork:start_interceptor()
   self.request_cache = {}
   self.content_str = ""
+  self.original_content_str = nil
   local bufnr = self.split1.bufnr
   local spinner_hidden = false
 
@@ -102,7 +103,6 @@ function M.ChromeNetwork:start_interceptor()
               local time = os.date("%H:%M:%S")
               local summary = string.format("[%s] %s %s", method, last_segment, time)
 
-              -- append visible summary line
               local line_count = vim.api.nvim_buf_line_count(bufnr)
               if line_count == 1 and vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1] == "" then
                 vim.api.nvim_buf_set_lines(bufnr, 0, 1, false, { summary })
@@ -110,12 +110,10 @@ function M.ChromeNetwork:start_interceptor()
                 vim.api.nvim_buf_set_lines(bufnr, -1, -1, false, { summary })
               end
 
-              -- generate marker
               local marker_id = vim.fn.sha256(vim.inspect(decoded)):sub(1, 8)
               decoded.__np_marker = marker_id
               table.insert(self.request_cache, decoded)
 
-              -- attach an invisible extmark (concealed metadata)
               local line_idx = vim.api.nvim_buf_line_count(bufnr) - 1
               vim.api.nvim_buf_set_extmark(bufnr, ns, line_idx, 0, {
                 virt_text = { { "" .. marker_id, "Conceal" } },
@@ -150,7 +148,6 @@ function M.ChromeNetwork:get_selected_json()
     return nil
   end
 
-  -- Extract the marker ID from virt_text
   local vt = marks[1][4].virt_text
   if not vt or #vt == 0 then
     return nil
@@ -182,7 +179,6 @@ function M.ChromeNetwork:show_response()
   self:refresh_side_panel()
 end
 
--- Refresh display depending on view_mode
 function M.ChromeNetwork:refresh_side_panel()
   local decoded = self:get_selected_json()
   if not decoded then
@@ -198,7 +194,6 @@ function M.ChromeNetwork:refresh_side_panel()
     if decoded.body then
       local ok, parsed = pcall(vim.fn.json_decode, decoded.body)
       if ok and parsed then
-        -- write body to tempfile and format using jq for pretty output
         U.with_tempfile(vim.fn.json_encode(parsed), function(tmpfile)
           local jq_out = vim.fn.system(string.format("jq . %s", tmpfile))
           if vim.v.shell_error == 0 then
@@ -216,10 +211,10 @@ function M.ChromeNetwork:refresh_side_panel()
   end
 
   self.content_str = text
+  self.original_content_str = text -- ✅ always refresh for new request
   U.put_text(self.split2.bufnr, vim.split(text, "\n"))
 end
 
--- Toggle between request / response view
 function M.ChromeNetwork:toggle_view_mode()
   if not self.view_mode or self.view_mode == "response" then
     self.view_mode = "request"
@@ -229,7 +224,6 @@ function M.ChromeNetwork:toggle_view_mode()
   self:refresh_side_panel()
 end
 
--- Show URL and copy to clipboard
 function M.ChromeNetwork:show_url()
   local decoded = self:get_selected_json()
   if decoded and decoded.url then
@@ -246,12 +240,26 @@ function M.ChromeNetwork:jq_exec(command)
     command = "." -- fallback to identity filter
   end
 
-  U.with_tempfile(self.content_str, function(tmpfile)
+  -- Always base jq execution on the original JSON
+  local source = self.original_content_str or self.content_str
+
+  U.with_tempfile(source, function(tmpfile)
     local cmd = string.format("jq '%s' %s", command, tmpfile)
     local res = vim.fn.system(cmd)
-    self.content_str = res -- update cached string
+    self.content_str = res
     U.put_text(self.split2.bufnr, vim.split(res, "\n"))
   end)
+end
+
+function M.ChromeNetwork:jq_reset()
+  if not self.original_content_str then
+    vim.notify("No cached original JSON", vim.log.levels.WARN)
+    return
+  end
+
+  self.content_str = self.original_content_str
+  U.put_text(self.split2.bufnr, vim.split(self.original_content_str, "\n"))
+  vim.notify("Reset jq output to original JSON", vim.log.levels.INFO)
 end
 
 function M.ChromeNetwork:rerun()
