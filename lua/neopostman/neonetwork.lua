@@ -35,15 +35,24 @@ function M.ChromeNetwork:init()
   -- Store last fetched response content
   self.content = {}
   self.request_cache = {}
+  self.view_mode = "response"
 
   self:init_mappings()
 end
 
 function M.ChromeNetwork:init_mappings()
   help(self, self.split1, {
-    { "n", "<C-p>", function() self:toggle() end,        "Toggle ChromeNetwork" },
     { "n", "<cr>",  function() self:show_response() end, "Show response body" },
     { "n", "r",     function() self:rerun() end,         "Rerun interceptor" },
+    { "n", "<C-r>", function() self:toggle_view_mode() end, "Toggle request/response view" },
+    { "n", "y",     function() self:show_url() end,      "Show full request URL" },
+  })
+
+  help(self, self.split2, {
+    { "n", "<cr>",  function() self:show_response() end, "Show response body" },
+    { "n", "r",     function() self:rerun() end,         "Rerun interceptor" },
+    { "n", "<C-r>", function() self:toggle_view_mode() end, "Toggle request/response view" },
+    { "n", "y",     function() self:show_url() end,      "Show full request URL" },
   })
 
   help(self, self.jqsplit, {
@@ -91,7 +100,7 @@ function M.ChromeNetwork:start_interceptor()
               local url = decoded.url or "?"
               local last_segment = url:match("^.*/(.-)$") or url
               local time = os.date("%H:%M:%S")
-              local summary = string.format("[%s] %s  %s", method, last_segment, time)
+              local summary = string.format("[%s] %s %s", method, last_segment, time)
 
               -- append visible summary line
               local line_count = vim.api.nvim_buf_line_count(bufnr)
@@ -163,21 +172,72 @@ end
 
 function M.ChromeNetwork:show_response()
   local decoded = self:get_selected_json()
-  self:print(vim.inspect(decoded))
-  if decoded and decoded.body then
-    local ok, parsed = pcall(vim.fn.json_decode, decoded.body)
-    if ok and parsed then
-      self.content_str = vim.fn.json_encode(parsed) -- store as single string
-    else
-      self.content_str = decoded.body or ""
-    end
-  else
-    self.content_str = '{"error": "No body or invalid JSON"}'
+  if not decoded then
+    vim.notify("No request selected", vim.log.levels.WARN)
+    return
   end
 
-  -- By default, run jq_exec with the current line in jqsplit
-  local jq_line = vim.api.nvim_buf_get_lines(self.jqsplit.bufnr, 0, 1, false)[1] or "."
-  self:jq_exec(jq_line)
+  self.decoded = decoded
+  self.view_mode = "response"
+  self:refresh_side_panel()
+end
+
+-- Refresh display depending on view_mode
+function M.ChromeNetwork:refresh_side_panel()
+  local decoded = self:get_selected_json()
+  if not decoded then
+    vim.notify("No request selected", vim.log.levels.WARN)
+    return
+  end
+
+  local text = ""
+
+  if self.view_mode == "request" then
+    text = vim.inspect(decoded)
+  else
+    if decoded.body then
+      local ok, parsed = pcall(vim.fn.json_decode, decoded.body)
+      if ok and parsed then
+        -- write body to tempfile and format using jq for pretty output
+        U.with_tempfile(vim.fn.json_encode(parsed), function(tmpfile)
+          local jq_out = vim.fn.system(string.format("jq . %s", tmpfile))
+          if vim.v.shell_error == 0 then
+            text = jq_out
+          else
+            text = vim.fn.json_encode(parsed)
+          end
+        end)
+      else
+        text = decoded.body
+      end
+    else
+      text = '{"error": "No response body"}'
+    end
+  end
+
+  self.content_str = text
+  U.put_text(self.split2.bufnr, vim.split(text, "\n"))
+end
+
+-- Toggle between request / response view
+function M.ChromeNetwork:toggle_view_mode()
+  if not self.view_mode or self.view_mode == "response" then
+    self.view_mode = "request"
+  else
+    self.view_mode = "response"
+  end
+  self:refresh_side_panel()
+end
+
+-- Show URL and copy to clipboard
+function M.ChromeNetwork:show_url()
+  local decoded = self:get_selected_json()
+  if decoded and decoded.url then
+    vim.fn.setreg("+", decoded.url)
+    vim.notify("Copied URL to clipboard:\n" .. decoded.url, vim.log.levels.INFO)
+  else
+    vim.notify("No URL available for selected request", vim.log.levels.WARN)
+  end
 end
 
 function M.ChromeNetwork:jq_exec(command)
@@ -199,4 +259,3 @@ function M.ChromeNetwork:rerun()
 end
 
 return M
-
